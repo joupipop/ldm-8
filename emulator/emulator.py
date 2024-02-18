@@ -44,18 +44,20 @@ class Double:
     def __getitem__(self, item):
         return self.binary_string[item]
     def __add__(self, other):
-        return Double(self.decimal_value + other.decimal_value)
+        if self.decimal_value + other.decimal_value <= 2**16-1:
+            return Byte(self.decimal_value + other.decimal_value)
+        return Byte(self.decimal_value + other.decimal_value - 2**16)
     def __sub__(self, other):
-        if self.decimal_value > other.decimal_value:
-            return Double(self.decimal_value - other.decimal_value)
-        return Double(self.decimal_value - other.decimal_value + 256)
+        if self.decimal_value >= other.decimal_value:
+            return Byte(self.decimal_value - other.decimal_value)
+        return Byte(self.decimal_value - other.decimal_value + 2**16)
     def dec(self):
         return self.decimal_value
     def to_byte(self):
         return [Byte(int(self.binary_string[:8], 2)), Byte(int(self.binary_string[8:], 2))]
     def to_hex(self):
         return hex(self.decimal_value)[2:]
-A = '000'; B = '001'; C = '010'; FP = '011'; SP = '100'; HPC = '101'; LPC = '110'; F = '111'
+A = '000'; B = '001'; HFP = '010'; LFP = '011'; SP = '100'; HPC = '101'; LPC = '110'; F = '111'
 class CPU():
     def __init__(self, program):
         for i in range(len(program)):
@@ -66,7 +68,7 @@ class CPU():
     output = None
     signed_output = False
     def reset(self):
-        self.registers = {'000': Byte(0), '001': Byte(0), '010': Byte(0), '011': Byte(0), '100': Byte(0), '101': self.ram[0], '110': self.ram[1], '111': Byte(0)}   
+        self.registers = {'000': Byte(0), '001': Byte(0), '010': Byte(255), '011': Byte(255), '100': Byte(0), '101': self.ram[0], '110': self.ram[1], '111': Byte(0)}   
         self.AB = self.registers[A] & self.registers[B]
         self.halt = False
         self.output = None
@@ -84,28 +86,29 @@ class CPU():
         reg1 = next_byte[-3:]
         jump = False
         AB = self.registers[A] & self.registers[B]
+        FP = self.registers[HFP] & self.registers[LFP]
         match opcode:
             case '0000': # ldw
                 if mode == '0':
                     self.registers[reg0] = self.ram[(next_byte & next_next_byte).dec()]
                     next_address += 3
                 else:
-                    self.registers[reg0] = self.ram[next_byte.dec()]
-                    next_address += 2
+                    self.registers[reg0] = self.ram[AB.dec()]
+                    next_address += 1
             case '0001': # stw
                 if mode == '0':
                     self.ram[(next_byte & next_next_byte).dec()] = self.registers[reg0]
                     next_address += 3
                 else:
-                   self.ram[next_byte.dec()] = self.registers[reg0]
-                   next_address += 2
+                   self.ram[AB.dec()] = self.registers[reg0]
+                   next_address += 1
             case '0010': # mvw
                 if mode == '0':
                     self.registers[reg0] = self.registers[reg1]
                     next_address += 2
                 else:
-                    self.registers[reg0] = self.ram[AB.dec()]
-                    next_address += 1
+                    self.registers[reg0] = next_byte
+                    next_address += 2
             case '0011': # add
                 self.registers[F] = Byte(0)
                 termA = self.registers[reg0]
@@ -243,17 +246,17 @@ class CPU():
             case '1010': # push
                 self.registers[SP] += Byte(1)
                 if mode == '0':
-                    self.ram[self.registers[SP].dec()+65280] = self.registers[reg0]
+                    self.ram[FP.dec()-self.registers[SP].dec()] = self.registers[reg0]
                     next_address += 1
                 if mode == '1':
-                    self.ram[self.registers[SP].dec()+65280] = next_byte
+                    self.ram[FP.dec()-self.registers[SP].dec()] = self.ram[(next_byte & next_next_byte).dec()]
                     next_address += 2
             case '1011': # pop
                 if mode == '0':
-                    self.registers[reg0] = self.ram[self.registers[SP].dec()+65280]
+                    self.registers[reg0] = self.ram[FP.dec()-self.registers[SP].dec()]
                     next_address += 1
                 if mode == '1':
-                    self.ram[(next_byte & next_next_byte).dec()] = self.ram[self.registers[SP].dec()+65280]
+                    self.ram[(next_byte & next_next_byte).dec()] = self.ram[FP.dec()-self.registers[SP].dec()]
                     next_address += 3
                 self.registers[SP] -= Byte(1)
             case '1100': # bsl

@@ -23,8 +23,11 @@
 @endmacro
 
 @macro jnq 1
+    not f
     bsl f
-    
+    jnz %0
+@endmacro
+
 @macro ldi 2
     sub %0, %0
     add %0, %1

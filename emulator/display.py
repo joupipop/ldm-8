@@ -39,6 +39,7 @@ def genframe(CPU):
     A2 = ' ' + pad(LDM.registers['000'].dec2(), ' ', 4)
     B = pad(LDM.registers['001'].dec(), ' ', 3)
     B2 = ' ' + pad(LDM.registers['001'].dec2(), ' ', 4)
+    AB = pad((LDM.registers['000']&LDM.registers['001']).dec(), ' ', 5)
     C = pad(LDM.registers['010'].dec(), ' ', 3)
     C2 = ' ' + pad(LDM.registers['010'].dec2(), ' ', 4)
     address = CPU.old_address
@@ -48,28 +49,28 @@ def genframe(CPU):
     hex_address2 = '0x' + pad(hex(address+2)[2:], '0', 4)
     hex_address3 = '0x' + pad(hex(address+3)[2:], '0', 4)
     hex_address4 = '0x' + pad(hex(address+4)[2:], '0', 4)
-    stack_address = CPU.registers['100'].dec()+65280
-    stack = [CPU.ram[stack_address], CPU.ram[stack_address-1], CPU.ram[stack_address-2], CPU.ram[stack_address-3], CPU.ram[stack_address-4], CPU.ram[stack_address-5], CPU.ram[stack_address-6]]
+    stack_address = (CPU.registers['010']&CPU.registers['011']).dec() - CPU.registers['100'].dec()
+    stack = [CPU.ram[stack_address], CPU.ram[emulator.Double(stack_address+1).dec()], CPU.ram[emulator.Double(stack_address+2).dec()], CPU.ram[emulator.Double(stack_address+3).dec()], CPU.ram[emulator.Double(stack_address+4).dec()], CPU.ram[emulator.Double(stack_address+5).dec()], CPU.ram[emulator.Double(stack_address+6).dec()]]
     next_byte = CPU.ram[CPU.ram[address+1].dec()]
-    registers = {'000': 'a', '001': 'b', '010': 'c', '011': 'fp', '100': 'sp', '101': 'hpc', '110': 'lpc', '111': 'f'}
+    registers = {'000': 'a', '001': 'b', '010': 'hfp', '011': 'lfp', '100': 'sp', '101': 'hpc', '110': 'lpc', '111': 'f'}
     match CPU.ram[address][:4]:
         case '0000':
             instruction = 'ldw'
             if CPU.ram[address][4] == '1':
-                instruction += ' '+registers[CPU.ram[address][-3:]]+', 0x'+pad((emulator.Byte(0)&CPU.ram[address+1]).to_hex(), '0' ,4)
+                instruction += ' '+registers[CPU.ram[address][-3:]]+', *ab'
             else: instruction += ' '+registers[CPU.ram[address][-3:]]+', 0x'+pad((CPU.ram[address+1]&CPU.ram[address+2]).to_hex(), '0' ,4)
             instruction += ' '*(15-len(instruction))
         case '0001':
             instruction = 'stw'
             if CPU.ram[address][4] == '1':
-                instruction += ' '+registers[CPU.ram[address][-3:]]+', 0x'+pad((emulator.Byte(0)&CPU.ram[address+1]).to_hex(), '0' ,4)
+                instruction += ' '+registers[CPU.ram[address][-3:]]+', *ab'
             else: instruction += ' '+registers[CPU.ram[address][-3:]]+', 0x'+pad((CPU.ram[address+1]&CPU.ram[address+2]).to_hex(), '0' ,4)
             instruction += ' '*(15-len(instruction))
         case '0010':
             instruction = 'mvw'
             if CPU.ram[address][4] == '0':
                 instruction += ' '+registers[CPU.ram[address][-3:]]+', '+registers[CPU.ram[address+1][-3:]]
-            else: instruction += ' '+registers[CPU.ram[address][-3:]]+', *ab'
+            else: instruction += ' '+registers[CPU.ram[address][-3:]]+', '+str(CPU.ram[address+1].dec())
             instruction += ' '*(15-len(instruction))
         case '0011':
             instruction = ' add'
@@ -147,26 +148,26 @@ def genframe(CPU):
     print(f'╭Registers────────╮   ╭Output╮   ╭Instruction────╮')
     print(f'│ A :  {A} |{A2} │   │ {output} │   │{instruction}│')
     print(f'│ B :  {B} |{B2} │   ╰──────╯   ╰───────────────╯ ')
-    print(f'│ C :  {C} |{C2} │                               ')
+    print(f'│ AB :      {AB} │                               ')
     print(f'╰─────────────────╯                      •          ')
     print(f'╭Flags────────────╮                      •	    ')
     print(f'│ '+"\u001b[31m"*int(CPU.registers['111'][0])+'Z\u001b[97m',"\u001b[31m"*int(CPU.registers['111'][1])+'E\u001b[97m', "\u001b[31m"*int(CPU.registers['111'][2])+'O\u001b[97m', "\u001b[31m"*int(CPU.registers['111'][3])+'C\u001b[97m', "\u001b[31m"*int(CPU.registers['111'][4])+'B\u001b[97m', "\u001b[31m"*int(CPU.registers['111'][5])+'L\u001b[97m', "\u001b[31m"*int(CPU.registers['111'][6])+'P\u001b[97m', "\u001b[31m"*int(CPU.registers['111'][7])+'N\u001b[97m'+' │                      •         ') # print(f'│ Z E O C B L P N │                      •         ')
     print(f'╰─────────────────╯              ├RAM────────────┤ ')
     print(f' fp \u001b[31m■\u001b[97m                     {hex_address} │ {next_byte} | AF │ ')
     print(f' ╭Stack──────────╮               ├───────────────┤ ')
-    print(f' '+"\u001b[31m"*int(CPU.registers['011'].dec()+65280==stack_address)+f'│ \u001b[97m{stack[0]} | {pad(hex(stack[0].dec())[2:].capitalize(), "0", 2)} │                       •           ')
+    print(f' '+"\u001b[31m"*int(CPU.registers['100'].dec()==0)+f'│ \u001b[97m{stack[0]} | {pad(hex(stack[0].dec())[2:].upper(), "0", 2)} │                       •           ')
     print(f' ├───────────────┤                       •           ')
-    print(f' '+"\u001b[31m"*int(CPU.registers['011'].dec()+65280==stack_address-1)+f'│ \u001b[97m{stack[1]} | {pad(hex(stack[1].dec())[2:].capitalize(), "0", 2)} │                       •           ')
+    print(f' '+"\u001b[31m"*int(CPU.registers['100'].dec()==1)+f'│ \u001b[97m{stack[1]} | {pad(hex(stack[1].dec())[2:].upper(), "0", 2)} │                       •           ')
     print(f' ├───────────────┤               ├───────────────┤  ')
-    print(f' '+"\u001b[31m"*int(CPU.registers['011'].dec()+65280==stack_address-2)+f'│ \u001b[97m{stack[2]} | {pad(hex(stack[2].dec())[2:].capitalize(), "0", 2)} │      ▶ {hex_address0} │ {CPU.ram[address]} | {pad(hex(CPU.ram[address].dec())[2:].capitalize(), "0", 2)} │ ◀')
+    print(f' '+"\u001b[31m"*int(CPU.registers['100'].dec()==2)+f'│ \u001b[97m{stack[2]} | {pad(hex(stack[2].dec())[2:].upper(), "0", 2)} │      ▶ {hex_address0} │ {CPU.ram[address]} | {pad(hex(CPU.ram[address].dec())[2:].upper(), "0", 2)} │ ◀')
     print(f' ├───────────────┤               ├───────────────┤  ')
-    print(f' '+"\u001b[31m"*int(CPU.registers['011'].dec()+65280==stack_address-3)+f'│ \u001b[97m{stack[3]} | {pad(hex(stack[3].dec())[2:].capitalize(), "0", 2)} │        {hex_address1} │ {CPU.ram[address+1]} | {pad(hex(CPU.ram[address+1].dec())[2:].capitalize(), "0", 2)} │ ')
+    print(f' '+"\u001b[31m"*int(CPU.registers['100'].dec()==3)+f'│ \u001b[97m{stack[3]} | {pad(hex(stack[3].dec())[2:].upper(), "0", 2)} │        {hex_address1} │ {CPU.ram[address+1]} | {pad(hex(CPU.ram[address+1].dec())[2:].upper(), "0", 2)} │ ')
     print(f' ├───────────────┤               ├───────────────┤ ')
-    print(f' '+"\u001b[31m"*int(CPU.registers['011'].dec()+65280==stack_address-4)+f'│ \u001b[97m{stack[4]} | {pad(hex(stack[4].dec())[2:].capitalize(), "0", 2)} │        {hex_address2} │ {CPU.ram[address+2]} | {pad(hex(CPU.ram[address+2].dec())[2:].capitalize(), "0", 2)} │ ')
+    print(f' '+"\u001b[31m"*int(CPU.registers['100'].dec()==4)+f'│ \u001b[97m{stack[4]} | {pad(hex(stack[4].dec())[2:].upper(), "0", 2)} │        {hex_address2} │ {CPU.ram[address+2]} | {pad(hex(CPU.ram[address+2].dec())[2:].upper(), "0", 2)} │ ')
     print(f' ├───────────────┤     	         ├───────────────┤')
-    print(f' '+"\u001b[31m"*int(CPU.registers['011'].dec()+65280==stack_address-5)+f'│ \u001b[97m{stack[5]} | {pad(hex(stack[5].dec())[2:].capitalize(), "0", 2)} │        {hex_address3} │ {CPU.ram[address+3]} | {pad(hex(CPU.ram[address+3].dec())[2:].capitalize(), "0", 2)} │')
+    print(f' '+"\u001b[31m"*int(CPU.registers['100'].dec()==5)+f'│ \u001b[97m{stack[5]} | {pad(hex(stack[5].dec())[2:].upper(), "0", 2)} │        {hex_address3} │ {CPU.ram[address+3]} | {pad(hex(CPU.ram[address+3].dec())[2:].upper(), "0", 2)} │')
     print(f' ├───────────────┤               ├───────────────┤')
-    print(f' '+"\u001b[31m"*int(CPU.registers['011'].dec()+65280==stack_address-6)+f'│ \u001b[97m{stack[6]} | {pad(hex(stack[6].dec())[2:].capitalize(), "0", 2)} │        {hex_address4} │ {CPU.ram[address+4]} | {pad(hex(CPU.ram[address+4].dec())[2:].capitalize(), "0", 2)} │')
+    print(f' '+"\u001b[31m"*int(CPU.registers['100'].dec()==6)+f'│ \u001b[97m{stack[6]} | {pad(hex(stack[6].dec())[2:].upper(), "0", 2)} │        {hex_address4} │ {CPU.ram[address+4]} | {pad(hex(CPU.ram[address+4].dec())[2:].upper(), "0", 2)} │')
     print(f' ├───────────────┤               ├───────────────┤')
     print(f'        •                                •')
     print(f'        •                                •')

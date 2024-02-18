@@ -3,27 +3,27 @@
 --- REGISTERS ---
 (0) A - GP Register
 (1) B - GP Register
-(2) C - GP Register
-(3) FP - Frame pointer
+(2) HFP - Frame pointer high
+(3) LFP - Frame pointer low
 (4) SP - Stack pointer
 (5) HPC - Program counter high
 (6) LPC - Program counter low
 (7) F - FLAG REGISTER: [(Z)ero, (E)qual, (O)verflow, (C)arry, (B)orrow, (L)ess, (P)ositive, (N)egative]
-01000000
 The pair AB may be used as a 16 bit register (A & B)
+The actual stack pointer address is (FPL & FPH) - SP (stack grows downwards)
 
 --- INSTRUCTIONS ---
-0: LDW° reg, *imm16/*imm8  → reg = *imm16/*imm8
-1: STW° reg, *imm16/*imm8  → *imm16/*imm8 = reg
-2: MVW reg0, reg1/*AB     → reg0 = reg1/*AB
-3: ADD^ reg0, reg1/imm8    → reg0 = reg0 + reg1/imm8 
-4: ADC^ reg0, reg1/imm8    → reg0 = reg0 + reg1/imm8 + C 
-5: SUB^ reg0, reg1/imm8    → reg0 = reg0 - reg1/imm8     
-6: SBB^ reg0, reg1/imm8    → reg0 = reg0 - reg1/imm8 - B 
+0: LDW reg, *imm16/*AB     → reg = *imm16/*AB
+1: STW reg, *imm16/*AB     → *imm16/*AB = reg
+2: MVW reg0, reg1/imm8     → reg0 = reg1/*AB
+3: ADD^ reg0, reg1/imm8    → reg0 = reg0 + reg1/imm8
+4: ADC^ reg0, reg1/imm8    → reg0 = reg0 + reg1/imm8 + C
+5: SUB^ reg0, reg1/imm8    → reg0 = reg0 - reg1/imm8
+6: SBB^ reg0, reg1/imm8    → reg0 = reg0 - reg1/imm8 - B
 7: IEC^ inc/dec, reg       → reg++/reg--
-8: CMP^ reg0, reg1/imm8    → F = compare(reg0, reg1/imm8)    
-9: JNZ imm16/AB            → PC = imm16/AB if Z == 0   
-A: PUSH reg/imm8           → *SP++ = reg/imm8
+8: CMP^ reg0, reg1/imm8    → F = compare(reg0, reg1/imm8)
+9: JNZ imm16/AB            → PC = imm16/AB if Z == 0
+A: PUSH reg/*imm16         → *SP++ = reg/*imm16
 B: POP reg/*imm16          → reg/*imm16 = *SP--
 C: BSL reg/AB              → reg/AB = reg/AB << 1
 D: BSR reg/AB              → reg/AB = reg/AB >> 1
@@ -31,7 +31,6 @@ E: OUT unsigned/signed reg → O = unsigned/signed reg
 F: HALT                    → halt 
 
 ^ these instructions may affect the flag register
-° see ZERO PAGE ADDRESSING 
 
 --- INSTRUCTION LAYOUT ---
 XXXXYZZZ
@@ -39,16 +38,11 @@ X: opcode
 Y: addressing mode, 0/1
 Z: reg0
 
-The second argument (reg1, [imm16], etc.) is specifed in the next one or two bytes.
+The second argument (reg1, *imm16, etc.) is specifed in the next one or two bytes.
 Therefore instructions can be up to 3 bytes long.
 
---- ZERO PAGE ADDRESSING ---
-Upon assembling the assembler will start placing variables and data in the first 256 bytes of memory.
-When accessing these with 'LDW', setting the Y bit* will require only an imm8 directly after the instruction.
-Thus saving one cpu cycle.
-
-* see INSTRUCTION LAYOUT
-
 --- MEMORY LAYOUT ---
-0x0000..0xfeff: GP RAM
-0xff00..0xffff: Stack (255 bytes)
+|Static data →  Code data →                               ← Stack|
+|▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓|
+|<-------------------------65'535 bytes------------------------->|
+

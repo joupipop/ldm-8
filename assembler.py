@@ -8,7 +8,7 @@ try:
 except Exception as e:
     print(f"error: {e}")
 
-registers = {'a': '000', 'b': '001', 'c': '010', 'fp': '011', 'sp': '100', 'hpc': '101', 'lpc': '110', 'f': '111'}
+registers = {'a': '000', 'b': '001', 'hfp': '010', 'lfp': '011', 'sp': '100', 'hpc': '101', 'lpc': '110', 'f': '111'}
 
 def pad(string, length, character):
     while len(string) < length:
@@ -49,7 +49,7 @@ def assemble(code):
             match directive:
                 case 'db':
                     if len(arguments) == 2:
-                        if arguments[0].isidentifier() and arguments[0] not in variables:
+                        if arguments[0].isidentifier() and arguments[0] not in registers:
                             if arguments[1].isdigit():
                                 if int(arguments[1]) < 256:
                                     variables[arguments[0]] = len(binary_data) + 2
@@ -60,7 +60,7 @@ def assemble(code):
                     else: print(f'error: expected 2 arguments, got {len(arguments)}. (line {i+1})'); break
                 case 'dw':
                     if len(arguments) == 2:
-                        if arguments[0].isidentifier() and arguments[0] not in variables:
+                        if arguments[0].isidentifier() and arguments[0] not in registers:
                             if arguments[1].isdigit():
                                 if int(arguments[1]) < 256:
                                     variables[arguments[0]] = len(binary_data) + 2
@@ -71,7 +71,7 @@ def assemble(code):
                     else: print(f'error: expected 2 arguments, got {len(arguments)}. (line {i+1})'); break
                 case 'dd':
                     if len(arguments) == 2:
-                        if arguments[0].isidentifier() and arguments[0] not in variables:
+                        if arguments[0].isidentifier() and arguments[0] not in registers:
                             if arguments[1].isdigit():
                                 if int(arguments[1]) < 256:
                                     variables[arguments[0]] = len(binary_data) + 2
@@ -129,13 +129,12 @@ def assemble(code):
                 case 'ldw':
                     if len(arguments) == 2: # CHECK ARGUMENT LENGTH
                         if arguments[0] in registers: # CHECK REGISTER ARGUMENT
-                            if arguments[1] in variables and arguments[1] not in registers: # CHECK VARIABLE ARGUMENT 
+                            if (arguments[1] in variables and arguments[1] not in registers) or arguments[1] == '*ab': # CHECK VARIABLE ARGUMENT 
                                 command_bytes = '0000'
-                                if variables[arguments[1]] < 256: # ZERO PAGE ADDRESSING
+                                if arguments[1] == '*ab':
                                     command_bytes += '1' 
-                                    command_bytes += registers[arguments[0]]
-                                    command_bytes += pad(str(bin(variables[arguments[1]])[2:]), 8, '0') 
-                                    binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 4, '0')) # 0110 → \x06
+                                    command_bytes += registers[arguments[0]] 
+                                    binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 2, '0')) # 0110 → \x06
                                 else: 
                                     command_bytes += '0'
                                     command_bytes += registers[arguments[0]]
@@ -147,13 +146,12 @@ def assemble(code):
                 case 'stw':
                     if len(arguments) == 2: # CHECK ARGUMENT LENGTH
                         if arguments[0] in registers: # CHECK REGISTER ARGUMENT
-                            if arguments[1] in variables and arguments[1] not in registers: # CHECK VARIABLE ARGUMENT 
+                            if (arguments[1] in variables and arguments[1] not in registers) or arguments[1] == '*ab': # CHECK VARIABLE ARGUMENT 
                                 command_bytes = '0001'
-                                if variables[arguments[1]] < 256: # ZERO PAGE ADDRESSING
+                                if arguments[1] == '*ab': # ZERO PAGE ADDRESSING
                                     command_bytes += '1'
                                     command_bytes += registers[arguments[0]]
-                                    command_bytes += pad(str(bin(variables[arguments[1]])[2:]), 8, '0')
-                                    binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 4, '0')) # 0110 → \x06
+                                    binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 2, '0')) # 0110 → \x06
                                 else: 
                                     command_bytes += '0'
                                     command_bytes += registers[arguments[0]]
@@ -171,12 +169,13 @@ def assemble(code):
                                 command_bytes += registers[arguments[0]]
                                 command_bytes += pad(registers[arguments[1]], 8, '0')
                                 binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 4, '0')) # 0110 → \x06
-                            elif arguments[1] == '*ab':
+                            elif arguments[1].isdigit() and int(arguments[1]) < 256:
                                 command_bytes = '0010'
                                 command_bytes += '1'
                                 command_bytes += registers[arguments[0]]
+                                command_bytes += pad(str(bin(int(arguments[1]))[2:]), 8, '0')
                                 binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 2, '0')) # 0110 → \x06
-                            else: print(f'error: expected register or \'*ab\', got {arguments[1]}. (line {i-include_len+1})'); break   
+                            else: print(f'error: expected register or imm8, got {arguments[1]}. (line {i-include_len+1})'); break   
                         else: print(f'error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
                     else: print(f'error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break
                 case 'add':
