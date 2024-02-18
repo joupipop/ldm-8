@@ -54,10 +54,10 @@ def assemble(code):
                                 if int(arguments[1]) < 256:
                                     variables[arguments[0]] = len(binary_data) + 2
                                     binary_data += bytes.fromhex(pad(hex(int(arguments[1]))[2:], 2, '0'))
-                                else: print(f'error: {arguments[1]} is larger then 255. (line {i+1})'); break
-                            else: print(f'error: expected number, got {arguments[1]}. (line {i+1})'); break
-                        else: print(f'expected identifier, got {arguments[0]}')
-                    else: print(f'error: expected 2 arguments, got {len(arguments)}. (line {i+1})'); break
+                                else: print(f'\'{command}\' error: {arguments[1]} is larger then 255. (line {i+1})')
+                            else: print(f'\'{command}\' error: expected number, got {arguments[1]}. (line {i+1})'); break
+                        else: print(f'\'{command}\' error: expected identifier, got {arguments[0]}')
+                    else: print(f'\'{command}\' error: expected 2 arguments, got {len(arguments)}. (line {i+1})'); break
                 case 'dw':
                     if len(arguments) == 2:
                         if arguments[0].isidentifier() and arguments[0] not in registers:
@@ -65,10 +65,10 @@ def assemble(code):
                                 if int(arguments[1]) < 256:
                                     variables[arguments[0]] = len(binary_data) + 2
                                     binary_data += bytes.fromhex(pad(hex(int(arguments[1]))[2:], 4, '0'))
-                                else: print(f'error: {arguments[1]} is larger then 255. (line {i+1})'); break
-                            else: print(f'error: expected number, got {arguments[1]}. (line {i+1})'); break
-                        else: print(f'expected identifier, got {arguments[0]}'); break
-                    else: print(f'error: expected 2 arguments, got {len(arguments)}. (line {i+1})'); break
+                                else: print(f'\'{command}\' error: {arguments[1]} is larger then 255. (line {i+1})'); break
+                            else: print(f'\'{command}\' error: expected number, got {arguments[1]}. (line {i+1})'); break
+                        else: print(f'\'{command}\' error: expected identifier, got {arguments[0]}'); break
+                    else: print(f'\'{command}\' error: expected 2 arguments, got {len(arguments)}. (line {i+1})'); break
                 case 'dd':
                     if len(arguments) == 2:
                         if arguments[0].isidentifier() and arguments[0] not in registers:
@@ -76,10 +76,10 @@ def assemble(code):
                                 if int(arguments[1]) < 256:
                                     variables[arguments[0]] = len(binary_data) + 2
                                     binary_data += bytes.fromhex(pad(hex(int(arguments[1]))[2:], 8, '0'))
-                                else: print(f'error: {arguments[1]} is larger then 255. (line {i+1})'); break
-                            else: print(f'error: expected number, got {arguments[1]}. (line {i+1})'); break
-                        else: print(f'expected identifier, got {arguments[0]}'); break
-                    else: print(f'error: expected 2 arguments, got {len(arguments)}. (line {i+1})'); break
+                                else: print(f'\'{command}\' error: {arguments[1]} is larger then 255. (line {i+1})'); break
+                            else: print(f'\'{command}\' error: expected number, got {arguments[1]}. (line {i+1})'); break
+                        else: print(f'\'{command}\' error: expected identifier, got {arguments[0]}'); break
+                    else: print(f'\'{command}\' error: expected 2 arguments, got {len(arguments)}. (line {i+1})'); break
                 case 'macro':
                     if len(arguments) == 2:
                         if arguments[0].isidentifier() and arguments[0] not in registers:
@@ -87,16 +87,16 @@ def assemble(code):
                                 while code[j] != '@endmacro':
                                     j += 1
                                 macros[arguments[0]] = [arguments[1],'\n'.join(code[i+1:j])]
-                            else: print(f'error: expected number of arguments got {arguments[1]}')
-                        else: print(f'error: expected macro name got {arguments[0]}')
-                    else: print(f'error: expected 2 arguments got {len(arguments)}')
+                            else: print(f'\'{command}\' error: expected number of arguments got {arguments[1]}')
+                        else: print(f'\'{command}\' error: expected macro name got {arguments[0]}')
+                    else: print(f'\'{command}\' error: expected 2 arguments got {len(arguments)}')
                 case 'include':
                     file = arguments[0]
                     try:
                         with open(file, 'r') as file:
                             included_code = file.read()
                     except Exception as e:
-                        print(f"error: {e} (line {i+1})")
+                        print(f"\'{command}\' error: {e} (line {i+1})")
                     included_code = included_code.split('\n')
                     include_len += len(included_code)
                     code = code[:i] + included_code + code[i+1:]
@@ -116,7 +116,7 @@ def assemble(code):
                     binary_code = bytes(binary_code)
                     del expected_labels[label_name[0]]
                 labels[label_name[0]] = 2 + len(binary_data) + len(binary_code)
-            else: print(f'error: unexpected \'{" ".join(label_name[1:])}\'. (line {i-include_len+1})')
+            else: print(f'\'{command}\' error: unexpected \'{" ".join(label_name[1:])}\'. (line {i-include_len+1})')
             i += 1
         else: # INSTRUCTION
             if ' ' in command:
@@ -140,9 +140,9 @@ def assemble(code):
                                     command_bytes += registers[arguments[0]]
                                     command_bytes += pad(str(bin(variables[arguments[1]])[2:]), 16, '0')
                                     binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 6, '0')) # 0110 → \x06
-                            else: print(f'error: expected variable, got {arguments[1]}. (line {i-include_len+1})'); break
-                        else: print(f'error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break    
-                    else: print(f'error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break
+                            else: print(f'\'{command}\' error: expected variable, got {arguments[1]}. (line {i-include_len+1})'); break
+                        else: print(f'\'{command}\' error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break    
+                    else: print(f'\'{command}\' error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break
                 case 'stw':
                     if len(arguments) == 2: # CHECK ARGUMENT LENGTH
                         if arguments[0] in registers: # CHECK REGISTER ARGUMENT
@@ -157,9 +157,9 @@ def assemble(code):
                                     command_bytes += registers[arguments[0]]
                                     command_bytes += pad(str(bin(variables[arguments[1]])[2:]), 8, '0')
                                     binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 6, '0')) # 0110 → \x06
-                            else: print(f'error: variable, got {arguments[1]}. (line {i-include_len+1})'); break
-                        else: print(f'error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
-                    else: print(f'error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break
+                            else: print(f'\'{command}\' error: variable, got {arguments[1]}. (line {i-include_len+1})'); break
+                        else: print(f'\'{command}\' error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
+                    else: print(f'\'{command}\' error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break
                 case 'mvw':
                     if len(arguments) == 2: # CHECK ARGUMENT LENGTH
                         if arguments[0] in registers: # CHECK REGISTER ARGUMENT
@@ -175,9 +175,9 @@ def assemble(code):
                                 command_bytes += registers[arguments[0]]
                                 command_bytes += pad(str(bin(int(arguments[1]))[2:]), 8, '0')
                                 binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 2, '0')) # 0110 → \x06
-                            else: print(f'error: expected register or imm8, got {arguments[1]}. (line {i-include_len+1})'); break   
-                        else: print(f'error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
-                    else: print(f'error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break
+                            else: print(f'\'{command}\' error: expected register or imm8, got {arguments[1]}. (line {i-include_len+1})'); break   
+                        else: print(f'\'{command}\' error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
+                    else: print(f'\'{command}\' error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break
                 case 'add':
                     if len(arguments) == 2: # CHECK ARGUMENT LENGTH
                         if arguments[0] in registers: # CHECK REGISTER ARGUMENT
@@ -193,9 +193,9 @@ def assemble(code):
                                 command_bytes += registers[arguments[0]]
                                 command_bytes += pad(str(bin(int(arguments[1]))[2:]), 8, '0')
                                 binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 4, '0')) # 0110 → \x06
-                            else: print(f'error: expected register or number(<256), got {arguments[1]}. (line {i-include_len+1})'); break
-                        else: print(f'error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
-                    else: print(f'error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break
+                            else: print(f'\'{command}\' error: expected register or number(<256), got {arguments[1]}. (line {i-include_len+1})'); break
+                        else: print(f'\'{command}\' error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
+                    else: print(f'\'{command}\' error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break
                 case 'adc':
                     if len(arguments) == 2: # CHECK ARGUMENT LENGTH
                         if arguments[0] in registers: # CHECK REGISTER ARGUMENT
@@ -211,9 +211,9 @@ def assemble(code):
                                 command_bytes += registers[arguments[0]]
                                 command_bytes += pad(str(bin(int(arguments[1]))[2:]), 8, '0')
                                 binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 4, '0')) # 0110 → \x06
-                            else: print(f'error: expected register or number(<256), got {arguments[1]}. (line {i-include_len+1})'); break
-                        else: print(f'error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
-                    else: print(f'error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break                        
+                            else: print(f'\'{command}\' error: expected register or number(<256), got {arguments[1]}. (line {i-include_len+1})'); break
+                        else: print(f'\'{command}\' error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
+                    else: print(f'\'{command}\' error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break                        
                 case 'sub':
                     if len(arguments) == 2: # CHECK ARGUMENT LENGTH
                         if arguments[0] in registers: # CHECK REGISTER ARGUMENT
@@ -229,9 +229,9 @@ def assemble(code):
                                 command_bytes += registers[arguments[0]]
                                 command_bytes += pad(str(bin(int(arguments[1]))[2:]), 8, '0')
                                 binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 4, '0')) # 0110 → \x06
-                            else: print(f'error: expected register or number(<256), got {arguments[1]}. (line {i-include_len+1})'); break
-                        else: print(f'error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
-                    else: print(f'error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break
+                            else: print(f'\'{command}\' error: expected register or number(<256), got {arguments[1]}. (line {i-include_len+1})'); break
+                        else: print(f'\'{command}\' error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
+                    else: print(f'\'{command}\' error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break
                 case 'sbb':
                     if len(arguments) == 2: # CHECK ARGUMENT LENGTH
                         if arguments[0] in registers: # CHECK REGISTER ARGUMENT
@@ -247,9 +247,9 @@ def assemble(code):
                                 command_bytes += registers[arguments[0]]
                                 command_bytes += pad(str(bin(int(arguments[1]))[2:]), 8, '0')
                                 binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 4, '0')) # 0110 → \x06
-                            else: print(f'error: expected register or number(<256), got {arguments[1]}. (line {i-include_len+1})'); break
-                        else: print(f'error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
-                    else: print(f'error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break
+                            else: print(f'\'{command}\' error: expected register or number(<256), got {arguments[1]}. (line {i-include_len+1})'); break
+                        else: print(f'\'{command}\' error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
+                    else: print(f'\'{command}\' error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break
                 case 'inc':
                     if len(arguments) == 1: # CHECK ARGUMENT LENGTH
                         if arguments[0] in registers: # CHECK REGISTER ARGUMENT
@@ -257,8 +257,8 @@ def assemble(code):
                             command_bytes += '0'
                             command_bytes += registers[arguments[0]]
                             binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 2, '0')) # 0110 → \x06
-                        else: print(f'error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
-                    else: print(f'error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break
+                        else: print(f'\'{command}\' error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
+                    else: print(f'\'{command}\' error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break
                 case 'dec':
                     if len(arguments) == 1: # CHECK ARGUMENT LENGTH
                         if arguments[0] in registers: # CHECK REGISTER ARGUMENT
@@ -266,8 +266,8 @@ def assemble(code):
                             command_bytes += '1'
                             command_bytes += registers[arguments[0]]
                             binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 2, '0')) # 0110 → \x06
-                        else: print(f'error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
-                    else: print(f'error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break                        
+                        else: print(f'\'{command}\' error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
+                    else: print(f'\'{command}\' error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break                        
                 case 'cmp':
                     if len(arguments) == 2: # CHECK ARGUMENT LENGTH
                         if arguments[0] in registers: # CHECK REGISTER ARGUMENT
@@ -283,9 +283,9 @@ def assemble(code):
                                 command_bytes += registers[arguments[0]]
                                 command_bytes += pad(str(bin(int(arguments[1]))[2:]), 8, '0')
                                 binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 4, '0')) # 0110 → \x06
-                            else: print(f'error: expected register or number, got {arguments[1]}. (line {i-include_len+1})'); break
-                        else: print(f'error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
-                    else: print(f'error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break                        
+                            else: print(f'\'{command}\' error: expected register or number, got {arguments[1]}. (line {i-include_len+1})'); break
+                        else: print(f'\'{command}\' error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
+                    else: print(f'\'{command}\' error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break                        
                 case 'jnz':
                     if len(arguments) == 1:
                         if arguments[0] in labels:
@@ -306,7 +306,7 @@ def assemble(code):
                             command_bytes += '000'
                             command_bytes += '0000000000000000'
                             binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 2, '0'))
-                    else: print(f'error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break
+                    else: print(f'\'{command}\' error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break
                 case 'push':
                     if len(arguments) == 1:
                         if arguments[0] in registers:
@@ -314,14 +314,14 @@ def assemble(code):
                             command_bytes += '0'
                             command_bytes += registers[arguments[0]]
                             binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 2, '0')) # 0110 → \x06
-                        elif arguments[0].isdigit() and int(arguments[0]) < 256:
+                        elif arguments[0] in variables:
                             command_bytes = '1010'
                             command_bytes += '1'
                             command_bytes += '000'
-                            command_bytes += pad(str(bin(int(arguments[0]))[2:]), 8, '0')
+                            command_bytes += pad(str(bin(int(variables[arguments[0]]))[2:]), 16, '0')
                             binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 2, '0')) # 0110 → \x06
-                        else: print(f'error: expected register or number(<256), got {arguments[0]}. (line {i-include_len+1})'); break
-                    else: print(f'error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break
+                        else: print(f'\'{command}\' error: expected register or number(<256), got {arguments[0]}. (line {i-include_len+1})'); break
+                    else: print(f'\'{command}\' error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break
                 case 'pop':
                     if len(arguments) == 1:
                         if arguments[0] in registers:
@@ -335,8 +335,8 @@ def assemble(code):
                             command_bytes += '000'
                             command_bytes += pad(str(bin(int(variables[arguments[0]]))[2:]), 16, '0')
                             binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 4, '0')) # 0110 → \x06
-                        else: print(f'error: expected register or variable, got {arguments[0]}. (line {i-include_len+1})'); break
-                    else: print(f'error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break
+                        else: print(f'\'{command}\' error: expected register or variable, got {arguments[0]}. (line {i-include_len+1})'); break
+                    else: print(f'\'{command}\' error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break
                 case 'bsl':
                     if len(arguments) == 1:
                         if arguments[0] in registers:
@@ -349,8 +349,8 @@ def assemble(code):
                             command_bytes += '1'
                             command_bytes += '000'
                             binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 2, '0')) # 0110 → \x06
-                        else: print(f'error: expected register or \'ab\', got {arguments[0]}. (line {i-include_len+1})'); break
-                    else: print(f'error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break
+                        else: print(f'\'{command}\' error: expected register or \'ab\', got {arguments[0]}. (line {i-include_len+1})'); break
+                    else: print(f'\'{command}\' error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break
                 case 'bsr':
                     if len(arguments) == 1:
                         if arguments[0] in registers:
@@ -363,8 +363,8 @@ def assemble(code):
                             command_bytes += '1'
                             command_bytes += '000'
                             binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 2, '0'))
-                        else: print(f'error: expected register or \'ab\', got {arguments[0]}. (line {i-include_len+1})'); break
-                    else: print(f'error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break
+                        else: print(f'\'{command}\' error: expected register or \'ab\', got {arguments[0]}. (line {i-include_len+1})'); break
+                    else: print(f'\'{command}\' error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break
                 case 'out':
                     if len(arguments) == 1:
                         if arguments[0] in registers:
@@ -372,7 +372,7 @@ def assemble(code):
                             command_bytes += '0'
                             command_bytes += registers[arguments[0]]
                             binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 2, '0')) # 0110 → \x06
-                        else: print(f'error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
+                        else: print(f'\'{command}\' error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
                     elif len(arguments) == 2:
                         if arguments[0] in registers:
                             if arguments[1] == '-':
@@ -380,14 +380,14 @@ def assemble(code):
                                 command_bytes += '1'
                                 command_bytes += registers[arguments[0]]
                                 binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 2, '0')) # 0110 → \x06
-                            else: print(f'error: expected \'-\', got {arguments[1]}. (line {i-include_len+1})'); break
-                        else: print(f'error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
-                    else: print(f'error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break
+                            else: print(f'\'{command}\' error: expected \'-\', got {arguments[1]}. (line {i-include_len+1})'); break
+                        else: print(f'\'{command}\' error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
+                    else: print(f'\'{command}\' error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break
                 case 'halt':
                     if len(arguments) == 0:
                         command_bytes = '11110000'
                         binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 2, '0')) # 0110 → \x06
-                    else: print(f'error: expected 0 arguments, got {len(arguments)}. (line {i-include_len+1})'); break
+                    else: print(f'\'{command}\' error: expected 0 arguments, got {len(arguments)}. (line {i-include_len+1})'); break
                 case 'restoreLabels':
                     labels = save_labels
                 case _:
@@ -402,11 +402,11 @@ def assemble(code):
                             code = code[:i] + macro_code + ['restoreLabels'] + code[i:]
                             save_labels = labels
                             i -= 1
-                        else: print(f'error: expected {macros[operation][0]} arguments, got {len(arguments)}. (line {i-include_len+1})')
-                    else: print(f'error: unknown instruction {operation} (line {i-include_len+1})')
+                        else: print(f'\'{command}\' error: expected {macros[operation][0]} arguments, got {len(arguments)}. (line {i-include_len+1})')
+                    else: print(f'\'{command}\' error: unknown instruction {operation} (line {i-include_len+1})')
             i += 1
     if len(expected_labels) != 0:
-        print(f'error: expected address label, got \'{list(expected_labels)[0]}\'. (line {expected_labels[list(expected_labels)[0]][1]})')
+        print(f'\'{command}\' error: expected address label, got \'{list(expected_labels)[0]}\'. (line {expected_labels[list(expected_labels)[0]][1]})')
     binary = bytes.fromhex(pad(str(hex(len(binary_data)+2+start_address)[2:]), 4, '0')) + binary_data + binary_code
     return binary
 

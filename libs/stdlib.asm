@@ -1,19 +1,8 @@
-; ARCHITECTURE CONSTANTS
-@db ZERO 0
-
+@db bufferH 0
+@db bufferL 0
 ; STANDARD MACROS
-
-@macro not 1
-    push c
-    mvw c, %0
-    sub %0, c
-    sub %0, c
-    dec %0
-    pop c
-@endmacro
-
 @macro jmp 1
-    ldw f, ZERO
+    mvw f, 0
     jnz %0
 @endmacro
 
@@ -22,56 +11,71 @@
     jnz %0
 @endmacro
 
-@macro jnq 1
-    not f
-    bsl f
-    jnz %0
-@endmacro
-
-@macro ldi 2
-    sub %0, %0
-    add %0, %1
-@endmacro
-
-
-
-@macro peek 1
-    push a
-    ldi a, 255
+@macro peek 1 ; peeks to a
+    mvw a, hfp
     push b
-    ldi b, sp
-    sub b, %0
-    sub b, 2
-    mvw c, *ab
+    mvw b, lfp
+    sub b, sp
+    sbb a, 0
+    add b, 1
+    adc a, 0
+    add b, %0
+    adc a, 0
+    ldw a, *ab
     pop b
-    pop a
+@endmacro
+
+@macro put 1 ; put a
+    push b
+    push a
+    mvw a, hfp
+    mvw b, lfp
+    sub b, sp
+    sbb a, 0
+    add b, %0
+    adc a, 0
+    add b, 2
+    adc a, 0
+    pop f
+    stw f, *ab
+    pop b
+    mvw a, f
 @endmacro
 
 @macro call 1 ; arguments should be pushed in order onto stack before calling
-    push c
+    mvw a, 0
+    push a
+    push a
+    mvw a, hfp
+    mvw b, lfp
+    push sp
+    sub lfp, sp
+    sbb hfp, 0 
+    mvw sp, 0
+    push a
+    push b
     push hpc
     push lpc
-    push fp
-    mvw fp, sp
     jmp %0
 @endmacro
 
 @macro ret 0
-    mvw sp, fp
-    push b
-    push a
-    add fp, 2
-    peek 2
-    mvw fp, c
-    peek 3
-    add c, 9
-    mvw b, c
-    push f
-    peek 5
-    pop f
-    adc c, 0
-    mvw a, c
-    peek 5
-    jmp ab
+    mvw sp, 4
+    put 5
+    mvw a, b
+    put 6
+    pop bufferL
+    pop bufferH
+    pop b
+    pop a
+    pop sp
+    mvw lfp, b
+    mvw hfp, a
+    ldw a, bufferH
+    ldw b, bufferL ; not right address
+    add b, 6
+    adc a, 0
+    mvw f, 0
+    jnz ab
 @endmacro
- 
+
