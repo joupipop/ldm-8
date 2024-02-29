@@ -14,6 +14,49 @@ def pad(string, length, character):
     while len(string) < length:
         string = character + string
     return string
+
+def string_to_float(string):
+    if float(string) == 0.0:
+        return '0'+'00000'+'0000000000'
+    if float(string) > 65535:
+        return '0'+'11111'+'0000000000'
+    if float(string) < -65535:
+        return '1'+'11111'+'0000000000'
+    
+    if float(string) < 0:
+        float16 = '1'
+        string = string[1:]
+    else: float16 = '0'
+    whole_part = bin(int(float(string)))[2:]
+    frac_part = abs(float(string) - int(float(string)))
+    if len(str(whole_part)) > 11:
+        mantissa = str(whole_part)[:11]
+    else:
+        mantissa = str(whole_part)
+    for i in range(31-len(str(whole_part))):
+        frac_part += frac_part
+        if frac_part > 1:
+            frac_part -= 1
+            mantissa += '1'
+        else:
+            mantissa += '0'
+    exponent = len(whole_part)+14
+    while mantissa[0] == '0':
+        mantissa = mantissa[1:]
+        exponent -=1
+    if exponent < 0:
+        exponent = '00000'
+    else:
+        exponent = pad(bin(exponent)[2:], 5, '0')
+    mantissa += (11-len(mantissa))*'0'
+    mantissa = mantissa[1:]
+    if mantissa[12] == '1':
+        mantissa = bin(int(mantissa[:11], 2) + 1)[2:12]
+    else:
+        mantissa = mantissa[:10]
+    float16 += exponent + mantissa
+    return float16
+
 def assemble(code):
     variables = {}
     labels = {}
@@ -27,7 +70,6 @@ def assemble(code):
     i = 0
     while i < len(code):
         command = code[i].strip()
-        
         if ';' in command:
             command = command.replace(command[command.index(';'):], '')
             command = command.strip()
@@ -50,36 +92,35 @@ def assemble(code):
                 case 'db':
                     if len(arguments) == 2:
                         if arguments[0].isidentifier() and arguments[0] not in registers:
-                            if arguments[1].isdigit():
-                                if int(arguments[1]) < 256:
+                            if arguments[1].isdigit() or arguments[1].replace('-', '0').isdigit():
+                                if int(arguments[1]) < 256 and int(arguments[1]) >= 0:
                                     variables[arguments[0]] = len(binary_data) + 2
                                     binary_data += bytes.fromhex(pad(hex(int(arguments[1]))[2:], 2, '0'))
-                                else: print(f'\'{command}\' error: {arguments[1]} is larger then 255. (line {i+1})')
+                                elif int(arguments[1]) > -(2**7) and int(arguments[1]) < 0:
+                                    variables[arguments[0]] = len(binary_data) + 2
+                                    binary_data += bytes.fromhex(pad(hex((~int(arguments[1].replace('-', '')) & 0xFF) + 1)[2:], 2, '0'))
+                                else: print(f'\'{command}\' error: {arguments[1]} is larger then 255 or smaller then -128. (line {i+1})')
                             else: print(f'\'{command}\' error: expected number, got {arguments[1]}. (line {i+1})'); break
                         else: print(f'\'{command}\' error: expected identifier, got {arguments[0]}')
-                    else: print(f'\'{command}\' error: expected 2 arguments, got {len(arguments)}. (line {i+1})'); break
-                case 'dw':
-                    if len(arguments) == 2:
-                        if arguments[0].isidentifier() and arguments[0] not in registers:
-                            if arguments[1].isdigit():
-                                if int(arguments[1]) < 256:
-                                    variables[arguments[0]] = len(binary_data) + 2
-                                    binary_data += bytes.fromhex(pad(hex(int(arguments[1]))[2:], 4, '0'))
-                                else: print(f'\'{command}\' error: {arguments[1]} is larger then 255. (line {i+1})'); break
-                            else: print(f'\'{command}\' error: expected number, got {arguments[1]}. (line {i+1})'); break
-                        else: print(f'\'{command}\' error: expected identifier, got {arguments[0]}'); break
                     else: print(f'\'{command}\' error: expected 2 arguments, got {len(arguments)}. (line {i+1})'); break
                 case 'dd':
                     if len(arguments) == 2:
                         if arguments[0].isidentifier() and arguments[0] not in registers:
-                            if arguments[1].isdigit():
-                                if int(arguments[1]) < 256:
+                            if arguments[1].isdigit() or arguments[1].replace('-', '0').isdigit():
+                                if int(arguments[1]) < 2**16 and int(arguments[1]) >= 0:
                                     variables[arguments[0]] = len(binary_data) + 2
-                                    binary_data += bytes.fromhex(pad(hex(int(arguments[1]))[2:], 8, '0'))
-                                else: print(f'\'{command}\' error: {arguments[1]} is larger then 255. (line {i+1})'); break
-                            else: print(f'\'{command}\' error: expected number, got {arguments[1]}. (line {i+1})'); break
-                        else: print(f'\'{command}\' error: expected identifier, got {arguments[0]}'); break
-                    else: print(f'\'{command}\' error: expected 2 arguments, got {len(arguments)}. (line {i+1})'); break
+                                    binary_data += bytes.fromhex(pad(hex(int(arguments[1]))[2:], 4, '0'))
+                                elif int(arguments[1]) > -(2**15) and int(arguments[1]) < 0:
+                                    variables[arguments[0]] = len(binary_data) + 2
+                                    binary_data += bytes.fromhex(pad(hex((~int(arguments[1].replace('-', '')) & 0xFFFF) + 1)[2:], 4, '0'))
+                                else: print(f'\'{command}\' error: {arguments[1]} is larger then 65535. (line {i+1})'); break
+                            else:
+                                try:
+
+                                    variables[arguments[0]] = len(binary_data) + 2
+                                    binary_data += bytes.fromhex(pad(hex(int(string_to_float(arguments[1]), 2))[2:], 4, '0'))
+
+                                except Exception as e: print(e); print(f'\'{command}\' error: exxpected number, got {arguments[1]}. (line {i+1})'); break   
                 case 'macro':
                     if len(arguments) == 2:
                         if arguments[0].isidentifier() and arguments[0] not in registers:
@@ -103,6 +144,10 @@ def assemble(code):
                     j -= 1
                 case 'start':
                     start_address = len(binary_code)
+                case 'clear':
+                    if arguments[0] in labels:
+                        del labels[arguments[0]]
+                    else: print(f'\'{command}\' error: \'{arguments[0]}\' is not a label. (line {i-include_len+1})')
 
             i = j + 1
         elif command[-1] == ':': # LABEL
@@ -129,7 +174,7 @@ def assemble(code):
                 case 'ldw':
                     if len(arguments) == 2: # CHECK ARGUMENT LENGTH
                         if arguments[0] in registers: # CHECK REGISTER ARGUMENT
-                            if (arguments[1] in variables and arguments[1] not in registers) or arguments[1] == '*ab': # CHECK VARIABLE ARGUMENT 
+                            if arguments[1] in variables or arguments[1] == '*ab': # CHECK VARIABLE ARGUMENT 
                                 command_bytes = '0000'
                                 if arguments[1] == '*ab':
                                     command_bytes += '1' 
@@ -140,6 +185,14 @@ def assemble(code):
                                     command_bytes += registers[arguments[0]]
                                     command_bytes += pad(str(bin(variables[arguments[1]])[2:]), 16, '0')
                                     binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 6, '0')) # 0110 → \x06
+                            elif arguments[1][-1] == ']' and arguments[1][arguments[1].index('[')+1:-1].isdigit():
+                                index = int(arguments[1][arguments[1].index('[')+1:-1])
+                                command_bytes = '0000'
+                                command_bytes += '0'
+                                command_bytes += registers[arguments[0]]
+                                command_bytes += pad(str(bin(variables[arguments[1][:arguments[1].index('[')]]+index)[2:]), 16, '0')
+                                binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 6, '0')) # 0110 → \x06
+                                
                             else: print(f'\'{command}\' error: expected variable, got {arguments[1]}. (line {i-include_len+1})'); break
                         else: print(f'\'{command}\' error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break    
                     else: print(f'\'{command}\' error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break
@@ -155,8 +208,15 @@ def assemble(code):
                                 else: 
                                     command_bytes += '0'
                                     command_bytes += registers[arguments[0]]
-                                    command_bytes += pad(str(bin(variables[arguments[1]])[2:]), 8, '0')
+                                    command_bytes += pad(str(bin(variables[arguments[1]])[2:]), 16, '0')
                                     binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 6, '0')) # 0110 → \x06
+                            elif arguments[1][-1] == ']' and arguments[1][arguments[1].index('[')+1:-1].isdigit():
+                                index = int(arguments[1][arguments[1].index('[')+1:-1])
+                                command_bytes = '0001'
+                                command_bytes += '0'
+                                command_bytes += registers[arguments[0]]
+                                command_bytes += pad(str(bin(variables[arguments[1][:arguments[1].index('[')]]+index)[2:]), 16, '0')
+                                binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 6, '0')) # 0110 → \x06
                             else: print(f'\'{command}\' error: variable, got {arguments[1]}. (line {i-include_len+1})'); break
                         else: print(f'\'{command}\' error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
                     else: print(f'\'{command}\' error: expected 2 arguments, got {len(arguments)}. (line {i-include_len+1})'); break
@@ -300,7 +360,7 @@ def assemble(code):
                             command_bytes += '000'
                             binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 2, '0')) # 0110 → \x06
                         else:
-                            expected_labels[arguments[0]] = [1 + len(binary_data) + len(binary_code), i+1]
+                            expected_labels[arguments[0]] = [1 + len(binary_code), i-include_len+1]
                             command_bytes = '1001'
                             command_bytes += '0'
                             command_bytes += '000'
@@ -320,7 +380,14 @@ def assemble(code):
                             command_bytes += '000'
                             command_bytes += pad(str(bin(int(variables[arguments[0]]))[2:]), 16, '0')
                             binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 2, '0')) # 0110 → \x06
-                        else: print(f'\'{command}\' error: expected register or number(<256), got {arguments[0]}. (line {i-include_len+1})'); break
+                        elif arguments[0][-1] == ']' and arguments[0][arguments[0].index('[')+1:-1].isdigit():
+                            index = int(arguments[0][arguments[0].index('[')+1:-1])
+                            command_bytes = '1010'
+                            command_bytes += '1'
+                            command_bytes += '000'
+                            command_bytes += pad(str(bin(variables[arguments[0][:arguments[0].index('[')]]+index)[2:]), 16, '0')
+                            binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 6, '0')) # 0110 → \x06                        
+                        else: print(f'\'{command}\' error: expected register or variable, got {arguments[0]}. (line {i-include_len+1})'); break
                     else: print(f'\'{command}\' error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break
                 case 'pop':
                     if len(arguments) == 1:
@@ -335,6 +402,13 @@ def assemble(code):
                             command_bytes += '000'
                             command_bytes += pad(str(bin(int(variables[arguments[0]]))[2:]), 16, '0')
                             binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 4, '0')) # 0110 → \x06
+                        elif arguments[0][-1] == ']' and arguments[0][arguments[0].index('[')+1:-1].isdigit():
+                            index = int(arguments[0][arguments[0].index('[')+1:-1])
+                            command_bytes = '1011'
+                            command_bytes += '1'
+                            command_bytes += '000'
+                            command_bytes += pad(str(bin(variables[arguments[0][:arguments[0].index('[')]]+index)[2:]), 16, '0')
+                            binary_code += bytes.fromhex(pad(hex(int('0b'+command_bytes, 2))[2:], 6, '0')) # 0110 → \x06                        
                         else: print(f'\'{command}\' error: expected register or variable, got {arguments[0]}. (line {i-include_len+1})'); break
                     else: print(f'\'{command}\' error: expected 1 argument, got {len(arguments)}. (line {i-include_len+1})'); break
                 case 'bsl':
@@ -375,7 +449,7 @@ def assemble(code):
                         else: print(f'\'{command}\' error: expected register, got {arguments[0]}. (line {i-include_len+1})'); break
                     elif len(arguments) == 2:
                         if arguments[0] in registers:
-                            if arguments[1] == '-':
+                            if arguments[1] == 's':
                                 command_bytes = '1110'
                                 command_bytes += '1'
                                 command_bytes += registers[arguments[0]]

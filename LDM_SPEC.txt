@@ -14,10 +14,48 @@ The actual stack pointer address is (FPL & FPH) - SP (stack grows downwards)
 
 --- INSTRUCTIONS ---
 0: LDW reg, *imm16/*AB     → reg = *imm16/*AB
+	PC OUT MA IN
+	RAM OUT IR IN
+	*imm16/*AB ? CE += 3 : CE += 1
+	RAM+1 & RAM+2 OUT MA IN : AB OUT MA IN
+	RAM OUT REG0 IN
+	5 cycles
 1: STW reg, *imm16/*AB     → *imm16/*AB = reg
+	PC OUT MA IN
+	RAM OUT IR IN
+	*imm16/*AB ? CE += 3 : CE += 1
+	RAM+1 & RAM+2 OUT MA IN : AB OUT MA IN
+	REG OUT RAM IN
+	5 cycles 
 2: MVW reg0, reg1/imm8     → reg0 = reg1/*AB
+	PC OUT MA IN
+	RAM OUT IR IN
+	CE += 1
+	reg1/imm8 ? REG0 OUT REG1 IN : RAM+1 OUT REG0 IN
+	4 cycles
 3: ADD^ reg0, reg1/imm8    → reg0 = reg0 + reg1/imm8
+	PC OUT MA IN
+	RAM OUT IR IN
+	CE += 1
+	CLF
+	REG0 OUT ALU_A IN 
+	reg1/imm8 ? REG1 OUT ALU_B IN : RAM+1 OUT ALU_B IN
+	SUM
+	ALU_A OUT REG0 IN
+	ALU_F OUT FLAGS IN
+	9 cycles
 4: ADC^ reg0, reg1/imm8    → reg0 = reg0 + reg1/imm8 + C
+	PC OUT MA IN
+	RAM OUT IR IN
+	CE += 1
+	CLF
+	REG0 OUT ALU_A IN
+	reg1/imm8 ? REG1 OUT ALU_B IN : RAM+1 OUT ALU_B IN
+	SUM C
+	ALU_A OUT REG0 IN
+	ALU_F OUT FLAGS IN
+	9 cycles
+
 5: SUB^ reg0, reg1/imm8    → reg0 = reg0 - reg1/imm8
 6: SBB^ reg0, reg1/imm8    → reg0 = reg0 - reg1/imm8 - B
 7: IEC^ inc/dec, reg       → reg++/reg--
@@ -28,6 +66,11 @@ B: POP reg/*imm16          → reg/*imm16 = *SP--
 C: BSL reg/AB              → reg/AB = reg/AB << 1
 D: BSR reg/AB              → reg/AB = reg/AB >> 1
 E: OUT unsigned/signed reg → O = unsigned/signed reg
+	PC OUT MA IN
+	RAM OUT IR IN
+	CE += 1
+	REG OUT OUTPUT IN unsigned/signed ? NORM : SCI
+	4 cycles
 F: HALT                    → halt 
 
 ^ these instructions may affect the flag register
@@ -44,5 +87,4 @@ Therefore instructions can be up to 3 bytes long.
 --- MEMORY LAYOUT ---
 |Static data →  Code data →                               ← Stack|
 |▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓|
-|<-------------------------65'535 bytes------------------------->|
-
+|<-------------------------65'536 bytes------------------------->|

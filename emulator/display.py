@@ -22,7 +22,7 @@ def sleep():
              input()
         else:
             time.sleep(1/(cps_mhz*1_000_000))
-print('\x1b[?25l')
+print('\x1b[?25l', end='')
 while len(program) != 2**16:
      program += b'\x00'
 LDM = emulator.CPU(program)
@@ -174,10 +174,9 @@ def genframe(CPU):
     print(f'        •                                •')
 
 def run(CPU):
-    print("\033c\033[3J")
+    print("\033c\033[3J", end='')
     CPU.reset()
     while CPU.halt is False:
-        
         if display:
             print("\033c\033[3J")
             CPU.advance()
@@ -189,7 +188,7 @@ def run(CPU):
                     output = str(CPU.output.dec2())+'\n'
                 else: output = str(CPU.output.dec())+'\n'
             else: output = ''
-            print(output, end = '')            
+            print(output, end='')            
         if CPU.halt:
             print('Computer halted.')
             break
@@ -197,4 +196,4 @@ def run(CPU):
 
 LDM.reset()
 run(LDM)
-print('\x1b[?25h')
+print('\x1b[?25h', end='')

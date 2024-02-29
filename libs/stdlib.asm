@@ -1,12 +1,41 @@
-@db bufferH 0
-@db bufferL 0
+@dd buffer 0
 ; STANDARD MACROS
 @macro jmp 1
     mvw f, 0
     jnz %0
 @endmacro
 
-@macro jeq 1
+@macro jnq 1
+    bsl f
+    jnz %0
+@endmacro
+
+@macro jge 1
+    bsl f
+    bsl f
+    bsl f
+    bsl f
+    bsl f
+    jnz %0
+@endmacro
+
+@macro jn 1
+    bsl f
+    bsl f
+    bsl f
+    bsl f
+    bsl f
+    bsl f
+    jnz %0
+@endmacro
+
+@macro jp 1
+    bsl f
+    bsl f
+    bsl f
+    bsl f
+    bsl f
+    bsl f
     bsl f
     jnz %0
 @endmacro
@@ -64,18 +93,57 @@
     put 5
     mvw a, b
     put 6
-    pop bufferL
-    pop bufferH
+    pop buffer[0]
+    pop buffer[1]
     pop b
     pop a
     pop sp
     mvw lfp, b
     mvw hfp, a
-    ldw a, bufferH
-    ldw b, bufferL ; not right address
-    add b, 6
+    ldw a, buffer[0]
+    ldw b, buffer[1]
+    add b, 5
     adc a, 0
     mvw f, 0
     jnz ab
+@endmacro
+
+@macro ldw16 1
+    ldw a, %0[0]
+    ldw b, %0[1]
+@endmacro
+
+@macro stw16 1
+    stw a, %0[0]
+    stw b, %0[1]
+@endmacro
+
+@macro add16 1
+    push a
+    ldw a, %0[1]
+    add a, b
+    pop b
+    push a
+    mvw a, b
+    ldw b, %0[0]
+    adc a, b
+    pop b
+@endmacro
+
+@macro sub16 1
+    push a
+    ldw a, %0[1]
+    sub a, b
+    pop b
+    push a
+    mvw a, b
+    ldw b, %0[0]
+    sbb a, b
+    pop b
+@endmacro
+
+@macro out16 0
+    out a
+    out b
 @endmacro
 

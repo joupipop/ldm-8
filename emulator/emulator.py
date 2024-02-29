@@ -110,7 +110,7 @@ class CPU():
                     self.registers[reg0] = next_byte
                     next_address += 2
             case '0011': # add
-                self.registers[F] = Byte(0)
+                flag_buffer = ['0', '0', '0', '0', '0', '0', '0', '0']
                 termA = self.registers[reg0]
                 if mode == '0':
                     termB = self.registers[reg1]
@@ -119,18 +119,19 @@ class CPU():
                 result = termA + termB
                 self.registers[reg0] = result
                 if termA[0] == termB[0] != result[0]: # set overflow bit
-                    self.registers[F][2] = '1'
+                    flag_buffer[2] = '1'
                 if termA.dec() + termB.dec() > 255: # set carry bit
-                    self.registers[F][3] = '1'
+                    flag_buffer[3] = '1'
                 if result.dec() == 0: # set zero bit
-                    self.registers[F][0] = '1'
+                    flag_buffer[0] = '1'
                 if result[0] == '0': # set positive bit
-                    self.registers[F][6] = '1'
+                    flag_buffer[6] = '1'
                 if result[0] == '1' or result.dec() == 0: # set negative bit
-                    self.registers[F][7] = '1'                 
+                    flag_buffer[7] = '1'
+                self.registers[F] = Byte(int(''.join(flag_buffer), 2))                 
                 next_address += 2
             case '0100': # adc
-                self.registers[F] = Byte(0)
+                flag_buffer = ['0', '0', '0', '0', '0', '0', '0', '0']
                 termA = self.registers[reg0]
                 if mode == '0':
                     termB = self.registers[reg1]
@@ -139,18 +140,19 @@ class CPU():
                 result = termA + termB + Byte(int(self.registers[F][3]))
                 self.registers[reg0] = result
                 if termA[0] == termB[0] != result[0]: 
-                    self.registers[F][2] = '1'
+                    flag_buffer[2] = '1'
                 if termA.dec() + termB.dec() + int(self.registers[F][3]) > 255:
-                    self.registers[F][3] = '1'
+                    flag_buffer[3] = '1'
                 if result.dec() == 0:
-                    self.registers[F][0] = '1'
+                    flag_buffer[0] = '1'
                 if result[0] == '0':
-                    self.registers[F][6] = '1'
+                    flag_buffer[6] = '1'
                 if result[0] == '1' or result.dec() == 0:
-                    self.registers[F][7] = '1'                 
+                    flag_buffer[7] = '1'                 
                 next_address += 2
+                self.registers[F] = Byte(int(''.join(flag_buffer), 2))
             case '0101': # sub
-                self.registers[F] = Byte(0)
+                flag_buffer = ['0', '0', '0', '0', '0', '0', '0', '0']
                 termA = self.registers[reg0]
                 if mode == '0':
                     termB = self.registers[reg1]
@@ -159,18 +161,19 @@ class CPU():
                 result = termA - termB
                 self.registers[reg0] = result
                 if termA[0] == termB[0] != result[0]: 
-                    self.registers[F][2] = '1'
+                    flag_buffer[2] = '1'
                 if termA.dec() - termB.dec() < 0:
-                    self.registers[F][4] = '1'
+                    flag_buffer[4] = '1'
                 if result.dec() == 0: 
-                    self.registers[F][0] = '1'
+                    flag_buffer[0] = '1'
                 if result[0] == '0':
-                    self.registers[F][6] = '1'
+                    flag_buffer[6] = '1'
                 if result[0] == '1' or result.dec() == 0:
-                    self.registers[F][7] = '1'                 
+                    flag_buffer[7] = '1'      
+                self.registers[F] = Byte(int(''.join(flag_buffer), 2))           
                 next_address += 2
             case '0110': # sbb
-                self.registers[F] = Byte(0)
+                flag_buffer = ['0', '0', '0', '0', '0', '0', '0', '0']
                 termA = self.registers[reg0]
                 if mode == '0':
                     termB = self.registers[reg1]
@@ -179,58 +182,60 @@ class CPU():
                 result = termA - termB - Byte(int(self.registers[F][4]))
                 self.registers[reg0] = result
                 if termA[0] == termB[0] != result[0]: 
-                    self.registers[F][2] = '1'
+                    flag_buffer[2] = '1'
                 if termA.dec() - termB.dec() - int(self.registers[F][4]) < 0: 
-                    self.registers[F][4] = '1'
+                    flag_buffer[4] = '1'
                 if result.dec() == 0:
-                    self.registers[F][0] = '1'
+                    flag_buffer[0] = '1'
                 if result[0] == '0':
-                    self.registers[F][6] = '1'
+                    flag_buffer[6] = '1'
                 if result[0] == '1' or result.dec() == 0:
-                    self.registers[F][7] = '1'                
+                    flag_buffer[7] = '1'    
+                self.registers[F] = Byte(int(''.join(flag_buffer), 2))            
                 next_address += 2
             case '0111': # iec
-                self.registers[F] = Byte(0)
+                flag_buffer = ['0', '0', '0', '0', '0', '0', '0', '0']
                 if mode == '0':
                     termA = self.registers[reg0]
                     result = termA + Byte(1)
                     self.registers[reg0] = result
                     if termA[0] != result[0]: 
-                        self.registers[F][2] = '1'
+                        flag_buffer[2] = '1'
                     if termA.dec() + 1 > 255: 
-                        self.registers[F][3] = '1'
+                        flag_buffer[3] = '1'
                 if mode == '1':
                     termA = self.registers[reg0]
                     result = termA - Byte(1)
                     self.registers[reg0] = result
                     if termA[0] != result[0]: 
-                        self.registers[F][2] = '1'
+                        flag_buffer[2] = '1'
                     if termA.dec() - 1 < 0: 
-                        self.registers[F][3] = '1'
+                        flag_buffer[3] = '1'
                 if result.dec() == 0:
-                    self.registers[F][0] = '1'
+                    flag_buffer[0] = '1'
                 if result[0] == '0':
-                    self.registers[F][6] = '1'
+                    flag_buffer[6] = '1'
                 if result[0] == '1' or result.dec() == 0:
-                    self.registers[F][7] = '1'
+                    flag_buffer[7] = '1'
                 next_address += 1
             case '1000': # cmp
-                self.registers[F] = Byte(0)
+                flag_buffer = ['0', '0', '0', '0', '0', '0', '0', '0']
                 termA = self.registers[reg0]
                 if mode == '0':
                     termB = self.registers[reg1]
                 if mode == '1':
                     termB = next_byte
                 if termA.dec() == 0: # zero flag
-                    self.registers[F][0] = '1'
-                if termA == termB: # equal flag
-                    self.registers[F][1] = '1'
+                    flag_buffer[0] = '1'
+                if termA.dec() == termB.dec(): # equal flag
+                    flag_buffer[1] = '1'
                 if termA.dec() < termB.dec(): # less flag
-                    self.registers[F][5] = '1'
+                    flag_buffer[5] = '1'
                 if termA[0] == '0': # positive flag
-                    self.registers[F][6] = '1'
+                    flag_buffer[6] = '1'
                 if termA[0] == '1' or termA.dec() == 0: # negative flag
-                    self.registers[F][7] = '1'
+                    flag_buffer[7] = '1'
+                self.registers[F] = Byte(int(''.join(flag_buffer), 2))
                 next_address += 2
             case '1001': # jnz
                 if self.registers[F][0] == '0':
@@ -267,7 +272,7 @@ class CPU():
                     self.registers[B] = Double((self.registers[A] & self.registers[B]).dec()<<1).to_byte()[1]
                 next_address += 1
             case '1101': # bsr
-                if mode == '0':
+                if mode == '0':     
                     self.registers[reg0] = Byte(self.registers[reg0].dec()>>1)
                 if mode == '1':
                     self.registers[A] = Double((self.registers[A] & self.registers[B]).dec()>>1).to_byte()[0]
