@@ -3,14 +3,15 @@
 --- REGISTERS ---
 (0) A - GP Register
 (1) B - GP Register
-(2) HFP - Frame pointer high
-(3) LFP - Frame pointer low
-(4) SP - Stack pointer
-(5) HPC - Program counter high
-(6) LPC - Program counter low
-(7) F - FLAG REGISTER: [(Z)ero, (E)qual, (O)verflow, (C)arry, (B)orrow, (L)ess, (P)ositive, (N)egative]
-The pair AB may be used as a 16 bit register (A & B)
-The actual stack pointer address is (FPL & FPH) - SP (stack grows downwards)
+(2) C - GP Register
+(3) D - GP REGISTER
+(4) HFP - Frame pointer high
+(5) LFP - Frame pointer low
+(6) SP - Stack pointer
+(7) F - FLAG REGISTER: [(P)ositive, (C)arry, (E)qual, (Z)ero, (L)ess, (B)orrow, (N)egative, (O)verflow]
+
+The actual stack pointer value is (FPL & FPH) - SP (stack grows downwards)
+The program counter is an extra 16bit register that is stored in memory at addresses 0x0000-0x0001
 
 --- INSTRUCTIONS ---
 0: LDW reg, *imm16/*AB     → reg = *imm16/*AB
@@ -19,20 +20,20 @@ The actual stack pointer address is (FPL & FPH) - SP (stack grows downwards)
 	*imm16/*AB ? CE += 3 : CE += 1
 	RAM+1 & RAM+2 OUT MA IN : AB OUT MA IN
 	RAM OUT REG0 IN
-	5 cycles
+	5 cycles 1|3 
 1: STW reg, *imm16/*AB     → *imm16/*AB = reg
 	PC OUT MA IN
 	RAM OUT IR IN
 	*imm16/*AB ? CE += 3 : CE += 1
 	RAM+1 & RAM+2 OUT MA IN : AB OUT MA IN
 	REG OUT RAM IN
-	5 cycles 
+	5 cycles  1|3
 2: MVW reg0, reg1/imm8     → reg0 = reg1/*AB
 	PC OUT MA IN
 	RAM OUT IR IN
 	CE += 1
 	reg1/imm8 ? REG0 OUT REG1 IN : RAM+1 OUT REG0 IN
-	4 cycles
+	4 cycles 2
 3: ADD^ reg0, reg1/imm8    → reg0 = reg0 + reg1/imm8
 	PC OUT MA IN
 	RAM OUT IR IN
@@ -43,7 +44,7 @@ The actual stack pointer address is (FPL & FPH) - SP (stack grows downwards)
 	SUM
 	ALU_A OUT REG0 IN
 	ALU_F OUT FLAGS IN
-	9 cycles
+	9 cycles 2
 4: ADC^ reg0, reg1/imm8    → reg0 = reg0 + reg1/imm8 + C
 	PC OUT MA IN
 	RAM OUT IR IN
@@ -54,26 +55,36 @@ The actual stack pointer address is (FPL & FPH) - SP (stack grows downwards)
 	SUM C
 	ALU_A OUT REG0 IN
 	ALU_F OUT FLAGS IN
-	9 cycles
-
-5: SUB^ reg0, reg1/imm8    → reg0 = reg0 - reg1/imm8
-6: SBB^ reg0, reg1/imm8    → reg0 = reg0 - reg1/imm8 - B
-7: IEC^ inc/dec, reg       → reg++/reg--
+	9 cycles 2
+5: SUB^ reg0, reg1/imm8    → reg0 = reg0 - reg1/imm8 2
+6: SBB^ reg0, reg1/imm8    → reg0 = reg0 - reg1/imm8 - B 2
+7: IEC^ inc/dec, reg       → reg++/reg-- 1
 8: CMP^ reg0, reg1/imm8    → F = compare(reg0, reg1/imm8)
-9: JNZ imm16/AB            → PC = imm16/AB if Z == 0
+	PC OUT MA IN
+	RAM OUT IR IN
+	CE += 1 2
+9: JNZ imm16/AB            → PC = imm16/AB if Z == 0 1|3
 A: PUSH reg/*imm16         → *SP++ = reg/*imm16
-B: POP reg/*imm16          → reg/*imm16 = *SP--
-C: BSL reg/AB              → reg/AB = reg/AB << 1
-D: BSR reg/AB              → reg/AB = reg/AB >> 1
+	PC OUT MA IN
+	RAM OUT IR IN
+	CE += 1
+	SP OUT ALU IN
+	INC
+	ALU OUT SP IN
+	SP OUT MA IN
+	REG0 OUT RAM IN 1|3
+B: POP reg/*imm16          → reg/*imm16 = *SP-- 1|3
+C: BSL reg/AB              → reg/AB = reg/AB << 1 1
+D: BSR reg/AB              → reg/AB = reg/AB >> 1 1
 E: OUT unsigned/signed reg → O = unsigned/signed reg
 	PC OUT MA IN
 	RAM OUT IR IN
 	CE += 1
 	REG OUT OUTPUT IN unsigned/signed ? NORM : SCI
-	4 cycles
-F: HALT                    → halt 
+	4 cycles 1
+F: HALT                    → halt 1
 
-^ these instructions may affect the flag register
+^ these instructions will affect the flag register
 
 --- INSTRUCTION LAYOUT ---
 XXXXYZZZ
@@ -85,6 +96,7 @@ The second argument (reg1, *imm16, etc.) is specifed in the next one or two byte
 Therefore instructions can be up to 3 bytes long.
 
 --- MEMORY LAYOUT ---
-|Static data →  Code data →                               ← Stack|
+|Text →         Static data →                             ← Stack|
 |▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓|
 |<-------------------------65'536 bytes------------------------->|
+First two bytes are reserved for the program counter

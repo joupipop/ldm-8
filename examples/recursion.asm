@@ -1,29 +1,17 @@
-@include repo/libs/stdlib.asm
+@include ../libs/stdlib.asm
 sum:
-    peek 7
     cmp a, 1
-    jnq sum_recursion
-        mvw b, 1
-        mvw a, 0
+    jnq recursive_case
     ret
-    sum_recursion:
-        dec a
-        push a
-        call sum
-        pop a
-        pop b
-        dec sp
-        peek 7
-        add b, a
-        mvw a, 0
-    ret
-
+recursive_case:
+    push a
+    dec a
+    call sum
+    pop b
+    add a, b
+ret
 @start
 mvw a, 10
-push a
 call sum
-pop b
-pop a
-out b
+out a
 halt
-        

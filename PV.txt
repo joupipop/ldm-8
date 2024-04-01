@@ -9,3 +9,12 @@ Disscusions sur forme du travail.
 Objectifs convenus:
     - Définir et implementer les conventions d'appel. ✅
     - Créer une librarie pour operations entre floats.
+
+--- RDV 3 - 29/02/2024 ---
+Objectifs convenus:
+    - Definir mul et div entre entiers ✅
+    - Operations entre floats ✅ 
+
+
+RENDU: 13-21.05.24
+Semaine avant l'ascension
