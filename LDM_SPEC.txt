@@ -15,68 +15,20 @@ The program counter is an extra 16bit register that is stored in memory at addre
 
 --- INSTRUCTIONS ---
 0: LDW reg, *imm16/*AB     → reg = *imm16/*AB
-	PC OUT MA IN
-	RAM OUT IR IN
-	*imm16/*AB ? CE += 3 : CE += 1
-	RAM+1 & RAM+2 OUT MA IN : AB OUT MA IN
-	RAM OUT REG0 IN
-	5 cycles 1|3 
 1: STW reg, *imm16/*AB     → *imm16/*AB = reg
-	PC OUT MA IN
-	RAM OUT IR IN
-	*imm16/*AB ? CE += 3 : CE += 1
-	RAM+1 & RAM+2 OUT MA IN : AB OUT MA IN
-	REG OUT RAM IN
-	5 cycles  1|3
 2: MVW reg0, reg1/imm8     → reg0 = reg1/imm8
 3: ADD^ reg0, reg1/imm8    → reg0 = reg0 + reg1/imm8
-	PC OUT MA IN
-	RAM OUT IR IN
-	CE += 1
-	CLF
-	REG0 OUT ALU_A IN 
-	reg1/imm8 ? REG1 OUT ALU_B IN : RAM+1 OUT ALU_B IN
-	SUM
-	ALU_A OUT REG0 IN
-	ALU_F OUT FLAGS IN
-	9 cycles 2
 4: ADC^ reg0, reg1/imm8    → reg0 = reg0 + reg1/imm8 + C
-	PC OUT MA IN
-	RAM OUT IR IN
-	CE += 1
-	CLF
-	REG0 OUT ALU_A IN
-	reg1/imm8 ? REG1 OUT ALU_B IN : RAM+1 OUT ALU_B IN
-	SUM C
-	ALU_A OUT REG0 IN
-	ALU_F OUT FLAGS IN
-	9 cycles 2
 5: SUB^ reg0, reg1/imm8    → reg0 = reg0 - reg1/imm8 2
 6: SBB^ reg0, reg1/imm8    → reg0 = reg0 - reg1/imm8 - B 2
 7: IEC^ inc/dec, reg       → reg++/reg-- 1
 8: CMP^ reg0, reg1/imm8    → F = compare(reg0, reg1/imm8)
-	PC OUT MA IN
-	RAM OUT IR IN
-	CE += 1 2
 9: JNZ imm16/AB            → PC = imm16/AB if Z == 0
 A: PUSH reg/*imm16         → *SP++ = reg/*imm16
-	PC OUT MA IN
-	RAM OUT IR IN
-	CE += 1
-	SP OUT ALU IN
-	INC
-	ALU OUT SP IN
-	SP OUT MA IN
-	REG0 OUT RAM IN 1|3
 B: POP reg/*imm16          → reg/*imm16 = *SP-- 1|3
 C: BSL reg/AB              → reg/AB = reg/AB << 1 1
 D: BSR reg/AB              → reg/AB = reg/AB >> 1 1
 E: OUT unsigned/signed reg → O = unsigned/signed reg
-	PC OUT MA IN
-	RAM OUT IR IN
-	CE += 1
-	REG OUT OUTPUT IN unsigned/signed ? NORM : SCI
-	4 cycles 1
 F: HALT                    → halt 1
 
 ^ these instructions will affect the flag register
@@ -95,6 +47,3 @@ Therefore instructions can be up to 3 bytes long.
 |▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓|
 |<-------------------------65'536 bytes------------------------->|
 First two bytes are reserved for the program counter
-
-
-a!/b!(a-b)! = a*256 + b
