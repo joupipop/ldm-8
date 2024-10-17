@@ -15,6 +15,7 @@ macroTable = {}
 symbolTable = []
 addressTable = []
 discoveredSymbolTable = []
+constTable = {}
 literalTable = {"HPC": [0, 0, 1], "LPC": [1, 0, 1]}
 branchTable = []
 startAddress = 2
@@ -29,6 +30,14 @@ registers = {'a': "000", 'b': "001", 'c': "010", 'd': "011",
 
 
 def make_number8(string):
+    if string in constTable:
+        return constTable[string] % 256
+    if string[-1] == ']':
+        if string[string.index('[')+1:-1] == '0':
+            return constTable[string[:string.index('[')]] >> 8
+        if string[string.index('[')+1:-1] == '1':
+            return ((constTable[string[:string.index('[')]] << 8) % 65536) >> 8
+
     if string[:2] == "0x":
         return int(string, 16) % 256
     elif string[:2] == "0b":
@@ -50,21 +59,25 @@ def make_number16(string):
 
 
 def includepass(input_file):
+    included_code = []
     try:
         code = input_file.split("\n")
-        output_code = code
-        for line in code:
+        for i in range(len(code)):
+            line = code[i]
             if line[:8] == "@include":
-                del output_code[output_code.index(line)]
+                #del output_code[output_code.index(line)]
                 with open(line.split(" ")[1], "r") as file:
                     included_file = file.read()
                     file.close()
-                output_code = included_file.split("/n") + output_code
+                included_code += included_file.split("/n")
+            elif line.isspace():
+                pass
             else:
                 break
-    except:
-        print("error:", line)
+    except Exception as e:
+        print("error:", line, e)
         exit()
+    output_code = included_code + ["@start"] + code[i:]
     return "\n".join(output_code)
 def pass0(input_file):
     code = input_file.split("\n")
@@ -87,6 +100,11 @@ def pass0(input_file):
             else:
                 macroTable[current_macro_name][1].append(line)
         else:
+            if line [:6] == "@const":
+                try:
+                    constTable[line.split(" ")[1]] = make_number16(line.split(" ")[2])
+                except Exception:
+                    print("error:", line)
             if line[:6] == "@macro":
                 try:
                     macroTable[line.split(" ")[1]] = [int(line.split(" ")[2]), []]
@@ -123,26 +141,43 @@ def pass1(inter_code):
                 if ' ' not in line:
                     symbolTable.append(line[:-1])
                     addressTable.append(location_counter)
+                    constTable[line[:-1]] = location_counter
                 else:
                     print("error:", line)
                     exit()
                 continue
-            if line[:3] == "@db":
+            if line[:4] == "@db ":
                 tokens = line.split(" ")
                 if make_number8(tokens[2]) != -1:
-                    literalTable[tokens[1]] = [0, make_number8(tokens[2]), 1]
+                    literalTable[tokens[1]] = [0, make_number8(tokens[2]), 1, False]
                 else:
                     print("error:", line)
                     exit()
                 continue
-            if line[:3] == "@dd":
+            if line[:4] == "@dd ":
                 tokens = line.split(" ")
                 if make_number16(tokens[2]) != -1:
-                    literalTable[tokens[1]] = [0, make_number16(tokens[2]), 2]
+                    literalTable[tokens[1]] = [0, make_number16(tokens[2]), 2, False]
                 else:
                     print("error:", line)    
                     exit()   
-                continue                
+                continue
+            if line[:4] == "@dba": # @dba array 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+                tokens = line.split(" ")
+                valid_array = True
+                for i in range(2, len(tokens)):
+                    if make_number8(tokens[i]) == -1:
+                        valid_array = False
+                if valid_array:
+                    literalTable[tokens[1]] = [0, tokens[2:], 1, True]
+            if line[:4] == "@dda": # @dda array 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+                tokens = line.split(" ")
+                valid_array = True
+                for i in range(2, len(tokens)):
+                    if make_number16(tokens[i]) == -1:
+                        valid_array = False
+                if valid_array:
+                    literalTable[tokens[1]] = [0, tokens[2:], 2, True]
             if line == "@start":
                 startAddress = location_counter
             if line.split(" ")[0] in instructions:
@@ -203,7 +238,11 @@ def pass1(inter_code):
     for variable in literalTable:
         if variable != "HPC" and variable != "LPC":
             literalTable[variable][0] = location_counter
-            location_counter += literalTable[variable][2]
+            constTable[variable] = location_counter
+            if literalTable[variable][3] == False:
+                location_counter += literalTable[variable][2]
+            else:
+                location_counter += len(literalTable[variable][1])*literalTable[variable][2]
     return location_counter
 def pass2(inter_code):
     binary_code = b""
@@ -238,7 +277,7 @@ def pass2(inter_code):
                         operation_bytes += "0"
                         operation_bytes += registers[arguments[0]]
                         operation_bytes += "{0:016b}".format(literalTable[arguments[1][:arguments[1].index("[")]][0]+make_number16(arguments[1][arguments[1].index("[")+1:-1]))
-                        binary_code += bytes.fromhex("{0:06x}".format(int("0b"+operation_bytes, 2)))
+                        binary_code += bytes.fromhex("{0:06x}".format(int("0b"+operation_bytes, 2)))   
                     else:
                         operation_bytes += "0"
                         operation_bytes += registers[arguments[0]]
@@ -423,6 +462,7 @@ def pass2(inter_code):
                         operation_bytes += "000"
                         operation_bytes += "{0:016b}".format(literalTable[arguments[0][:arguments[0].index("[")]][0]+make_number16(arguments[0][arguments[0].index("[")+1:-1]))
                         binary_code += bytes.fromhex("{0:06x}".format(int("0b"+operation_bytes, 2)))
+
                     else:
                         operation_bytes += "1"
                         operation_bytes += "000"
@@ -476,7 +516,7 @@ def pass2(inter_code):
                     operation_bytes = "11110000"
                     binary_code += bytes.fromhex("{0:02x}".format(int("0b"+operation_bytes, 2)))
                 case _:
-                    if line.split(" ")[0] in ["@db", "@dd", "@clear", "@start"]:
+                    if line.split(" ")[0] in ["@db", "@dd", "@clear", "@start", "@const", "@dba", "@dda"]:
                         continue
                     elif line[-1] == ':':
                         discoveredSymbolTable.append(line[:-1])
@@ -484,24 +524,29 @@ def pass2(inter_code):
                         print("error:", line)
                         exit()
 
-        except Exception:
+        except Exception as e:
             print("error:", line)
+            print(e)
             exit()
     binary_code = bytes.fromhex("{0:04x}".format(startAddress)) + binary_code
     for variable in literalTable:
         if variable != "HPC" and variable != "LPC":
-            if literalTable[variable][2] == 1:
-                binary_code += bytes.fromhex("{0:02x}".format(literalTable[variable][1]))
+            if literalTable[variable][3] == False:
+                if literalTable[variable][2] == 1:
+                    binary_code += bytes.fromhex("{0:02x}".format(literalTable[variable][1]))
+                elif literalTable[variable][2] == 2:
+                    binary_code += bytes.fromhex("{0:04x}".format(literalTable[variable][1]))
             else:
-                binary_code += bytes.fromhex("{0:04x}".format(literalTable[variable][1]))
+                if literalTable[variable][2] == 1:
+                    for i in range(len(literalTable[variable][1])):
+                        binary_code += bytes.fromhex("{0:02x}".format(make_number8(literalTable[variable][1][i])))
+                if literalTable[variable][2] == 2:
+                    for i in range(len(literalTable[variable][1])):
+                        binary_code += bytes.fromhex("{0:04x}".format(make_number16(literalTable[variable][1][i])))
     return binary_code
 
-inter_code1 = includepass(input_file)
-inter_code2 = input_file
-while inter_code1 != inter_code2:
-    inter_code2 = includepass(inter_code1)
-inter_code2 = includepass(inter_code1)
-inter_code = inter_code2
+inter_code = includepass(input_file)
+
 inter_code = pass0(inter_code)
 byte_length = pass1(inter_code)
 output = pass2(inter_code)

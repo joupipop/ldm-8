@@ -18,10 +18,24 @@
     jnz %0
 @endmacro
 
+@macro callr 1
+    push sp
+    push hfp
+    push lfp
+    push HPC
+    push LPC
+    sub lfp, sp
+    sbb hfp, 0
+    mvw sp, 0
+    mvw f, 0
+    mvw a, a ; 2 byte padding
+    jnz %0
+@endmacro
+
 @macro ret 0
-    add lfp, 5
+    add lfp, 4
     adc hfp, 0
-    mvw sp, 5
+    mvw sp, 4
     pop buffer[1]
     pop buffer[0]
     pop d
@@ -31,7 +45,8 @@
     mvw hfp, c
     ldw c, buffer[0]
     ldw d, buffer[1]
-    add d, 11
+    sub d, 3 ; do NOT simplify to add 11, the "sub d, 3" must not have effect on c reg
+    add d, 14 ; 14
     adc c, 0
     mvw f, 0
     jnz cd
@@ -55,6 +70,12 @@
     ldw %0, %2[0]
     ldw %1, %2[1]
 @endmacro
+
+@macro stw16 3
+    stw %0, %2[0]
+    stw %1, %2[1]
+@endmacro
+
 
 ; STANDARD FUNCTIONS
 umul:
@@ -468,7 +489,6 @@ fmul:
     
     mvw d, c
     mvw c, b
-    
     bsr cd
     bsr cd
     bsr cd
@@ -476,7 +496,8 @@ fmul:
     bsr cd
     bsr cd
     adc d, 0
-
+    adc c, 0
+    
     sub sp, 4
     push d
     push c
@@ -550,19 +571,50 @@ exp_lt_0:
 @clear exp_lt_0
 ret
 
+fdiv:
+    push b
+    push a
+    mvw a, 0x77 ; magic const
+    mvw b, 0xab ; magic const2
+    sub b, d
+    sbb a, c ; x_0
+    push b 
+    push a
+    call fmul
+    add a, 128
+    mvw c, 0x40
+    mvw d, 0x00 
+    call fadd ; +2
+    pop c
+    pop d
+    call fmul ; x_1
+    pop c
+    pop d
+    call fmul
+ret
+
+
 fadd:
     ; check for zero
+    push a
+    bsl a
+    bsr a
     add a, 0
+    pop a
     jnz check_NUM2
     ; a is zero
         add b, 0
         jnz check_NUM2
         ; b is zero
             mvw a, c
-            mvw d, b
+            mvw b, d
             ret
     check_NUM2:
+    push c
+    bsl c
+    bsr c
     add c, 0
+    pop c
     jnz continue
     ; c is zero
         add d, 0
@@ -850,23 +902,31 @@ fadd:
     mvw d, 0
     bsr cd
     add a, d
-    ret
+ret
 @clear a_ge_b
 @clear a_gt_b
 
 fsub:
     ; check for zero
+    push a
+    bsl a
+    bsr a
     add a, 0
+    pop a
     jnz check_NUM2
     ; a is zero
         add b, 0
         jnz check_NUM2
         ; b is zero
             mvw a, c
-            mvw d, b
+            mvw b, d
             ret
     check_NUM2:
+    push c
+    bsl c
+    bsr c
     add c, 0
+    pop c
     jnz continue
     ; c is zero
         add d, 0
@@ -914,7 +974,6 @@ fsub:
     pop c
     pop d
     @clear continue
-    ; assumes NUM1 and NUM2 are both positive and NUM1 > NUM2
 
     ; create local variables:
     ; STACK:
@@ -1186,4 +1245,3 @@ fsub:
     ret
 @clear a_ge_b
 @clear a_gt_b
-@start

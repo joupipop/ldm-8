@@ -20,7 +20,7 @@ void reset(CPU* CPU) {
     CPU->registers[b] = 0;
     CPU->registers[hfp] = 255;
     CPU->registers[lfp] = 255;
-    CPU->registers[sp] = 0;
+    CPU->registers[sp] = 255;
     CPU->registers[f] = 0;
     CPU->ab = ((uint16_t)CPU->registers[a] * 256) + CPU->registers[b];
     CPU->cd = ((uint16_t)CPU->registers[c] * 256) + CPU->registers[d];
@@ -48,7 +48,7 @@ void advance(CPU* CPU) {
     int16_t alu_result = 0; 
     switch(opcode) {
         case 0: // ldw
-            if(mode == 0) {
+            if (mode == 0) {
                 CPU->pc += 3;
                 CPU->memory[1] = (uint8_t)CPU->pc;
                 CPU->memory[0] = (uint8_t)(CPU->pc >> 8);
@@ -466,8 +466,8 @@ void advance(CPU* CPU) {
             CPU->cycles_count += 1;
             break;
     }
-    //CPU->fp = ((uint16_t)CPU->registers[hfp] * 256) + CPU->registers[lfp];
-    //printf("%.4x: %.2x A: %d B: %d C: %d, D: %d STACK = %d, %d, %d, %d\n", old_pc, CPU->memory[old_pc], CPU->registers[a], CPU->registers[b], CPU->registers[c], CPU->registers[d], CPU->memory[CPU->fp - 10], CPU->memory[CPU->fp - 9], CPU->memory[CPU->fp - 8], CPU->memory[CPU->fp - 7]);
+    CPU->fp = ((uint16_t)CPU->registers[hfp] * 256) + CPU->registers[lfp];
+    printf("%.4x: %.2x A: %d B: %d C: %d, D: %d HPC: %d LPC: %d Stack:  %d, %d, %d, %d, %d\n", old_pc, CPU->memory[old_pc], CPU->registers[a], CPU->registers[b], CPU->registers[c], CPU->registers[d], CPU->memory[0], CPU->memory[1], CPU->memory[CPU->fp-CPU->registers[sp]], CPU->memory[CPU->fp-CPU->registers[sp]+1], CPU->memory[CPU->fp-CPU->registers[sp]+2], CPU->memory[CPU->fp-CPU->registers[sp]+3], CPU->memory[CPU->fp-CPU->registers[sp]+4]);
 }
 
 
@@ -547,10 +547,10 @@ int main(int argc, char **argv) {
         if(LDM.output_trigger == 1) {
             printf("%d ", LDM.output);
             printf("%d ", output_buffer * 256 + LDM.output);
-            printf("%.4f\n", floatgen(output_buffer * 256 + LDM.output));
+            printf("%.3f\n", floatgen(output_buffer * 256 + LDM.output));
             output_buffer = LDM.output;
         }
-        //getchar();
+        getchar();
 
     }
     double execution_time_s = LDM.cycles_count / 4000000.0;
