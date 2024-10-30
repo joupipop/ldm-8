@@ -591,6 +591,8 @@ fdiv:
     pop c
     pop d
     call fmul
+    add b, 2
+    adc a, 0
 ret
 
 

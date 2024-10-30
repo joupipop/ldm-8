@@ -9,7 +9,18 @@ inv: ; inv: [a-b]:f16 → [a-b]:f16 (x → 1/x)
     mvw c, 0x77 ; magic const
     mvw d, 0xab ; magic const2
     sub d, b
-    sub c, a
+    sbb c, a
+    push a ; check if borrow
+    mvw a, f
+    bsl a
+    bsl a
+    mvw f, a
+    jnz no_carry
+        ;carry
+        mvw c, 0
+        mvw d, 0
+    no_carry:
+    pop a
     push d
     push c
     call fmul
@@ -23,6 +34,7 @@ inv: ; inv: [a-b]:f16 → [a-b]:f16 (x → 1/x)
     add b, 2 ; this helps ig
     adc a, 0
 ret
+@clear no_carry
 
 ipow: ; ipow: [a-b]:f16, [c]:int → [a-b]:f16 (x, n → x^n)
     add c, 0
@@ -79,6 +91,17 @@ ipow: ; ipow: [a-b]:f16, [c]:int → [a-b]:f16 (x, n → x^n)
     ret
 
 trunc: ; floor: [a-b]:f16 → [a-b]:f16 (x → integer part of x)
+    ; check if x is larger than 1024 in which case return x
+    cmp a, 0x64
+    mvw c, f
+    bsl c
+    mvw d, 255
+    sub d, c ; invert c
+    mvw f, d
+    jnz smaller
+        ; x > 1024
+    ret
+    smaller:
     mvw d, 0
     mvw c, a
     bsr cd
@@ -118,6 +141,9 @@ trunc: ; floor: [a-b]:f16 → [a-b]:f16 (x → integer part of x)
     bsr a
     bsr a
     bsr a
+    bsr b
+    bsl b
+    inc b
     add a, 4
     push c
     mvw c, 10
@@ -267,7 +293,6 @@ sin: ; sin: [a-b]:f16 → [a-b]:f16 (x → sin(x))
         call fsub
         add a, 128
     x_lt_pi:
-    
     @clear a_ne_c
     @clear b_ne_d
     @clear x_lt_pi
@@ -540,8 +565,6 @@ cos:
     @clear a_gt_c
     @clear x_lt_halfpi
     @clear x_gt_halfpi
-    out a
-    out b
     mvw c, 0x3c
     mvw d, 0x00
     push b

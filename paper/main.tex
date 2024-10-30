@@ -87,16 +87,15 @@ Renens, 31 février 2024
 \tableofcontents
 \newpage
 \section{Introduction}
-Les résultats exacts, étant parfois difficiles voir impossibles à atteindre, nécessitent, pour s'en approcher, des approximations. 
-Il s'agit donc de choisir, parmi un sous ensemble fini d'un ensemble qui ne l'est pas, la valeur qui correspond le mieux au résultat désiré. Le domaine mathématique de l'analyse numérique décrit les meilleurs manières de faire ce choix et plus récemment, décrit aussi comment déléguer cette décision aux machines. En effet, avec une importance moindre apportée à l'exactitude mais un intérêt grandissant pour la vitesse, les machines sont bien plus adaptées à cette tache que les humains.
-Dans ce travail, nous introduirons abstraitement la notion de processeur sans traiter des composants spécifiques à l'implémentation physique d'une telle machine. 
-Ensuite nous montrerons comment, en partant d'opérations basiques et en se servant de l'abstraction comme échelon, nous pouvons atteindre n'importe quel sommet de complexité mathématique. Sans les résultats présentés dans ce travail, le monde moderne serait tout simplement impossible. L'entièreté de l'informatique, et donc par dépendance, de notre monde est construite sur les concepts fondamentaux que nous verrons ensemble ici. Notons que ce travail aura un accent particulier sur la compréhension et l'intuition plutôt que sur la rigueur. Laissons la rigueur aux artistes qui nous offrent ces résultats dont on profite si volontiers.\\
-Ces sommets mathématiques étant, malgré leur élégance, très accessibles, un grand bagage de connaissances n'est pas nécessaire. Il s'agirait tout de même d'être familier avec quelques notions basiques d'analyse tel que la dérivation et les propriétés des fonctions trigonométriques et logarithmiques. Les autres résultats sont expliqués intuitivement avec plus ou moins de rigueur, en fonction de l'impact sur le niveau de compréhension. Les démarches complètes seront, bien évidemment, référencés dans la bibliographie.
+Dans notre monde de plus en plus digitalisé, l'on a trop souvent tendance à traiter les ordinateurs comme des boîtes noires auxquelles l'on peut faire aveuglement confiance. Cette confiance est le fruit du travail de nombreux.ses mathématicien.es qui remontent jusqu'à l'Antiquité. En effet, les méthodes pour résoudre des problèmes de manière numérique plutôt que symbolique nous intéressent depuis fort longtemps. Ces méthodes, qu'on regroupe sous le domaine mathématique de l'analyse numérique, se sont faites plus récemment appropriées par les ordinateurs. Avec une importance moindre apportée à l'exactitude mais un intérêt grandissant pour la vitesse, les machines sont bien plus adaptées à ces taches que les humains.
+Ce travail a pour objectif de démystifier les opérations internes d'un ordinateur.
+Nous y introduirons abstraitement la notion de processeur sans traiter des composants spécifiques à l'implémentation physique d'une telle machine. 
+Puis nous montrerons comment, en partant d'opérations basiques et en se servant de l'abstraction comme échelon, nous pouvons atteindre de très grands sommets de complexité mathématique. Sans les résultats présentés dans ce travail, le monde moderne serait tout simplement impossible. L'entièreté de l'informatique, et donc par dépendance, de notre monde est construite sur les concepts fondamentaux que nous verrons ensemble ici. Notons que ce travail aura un accent particulier sur la compréhension et l'intuition plutôt que sur la rigueur. Laissons la rigueur aux artistes qui nous offrent ces résultats dont on profite si volontiers.
+Ces sommets mathématiques étant, malgré leur élégance, très accessibles, un grand bagage de connaissances n'est pas nécessaire. Il s'agirait tout de même d'être familier avec quelques notions basiques d'analyse tel que la dérivation et les propriétés des fonctions trigonométriques et logarithmiques. Les autres résultats seront expliqués intuitivement avec plus ou moins de rigueur, en fonction de l'impact sur le niveau de compréhension. Les démarches complètes seront, bien évidemment, référencées dans la bibliographie.
 \section{Architecture de la machine}
 \subsection{Introduction à l'architecture de CPU}
-L'objectif de cette section est de concevoir une machine (qu'on appellera processeur), certes théorique mais tout à fait réaliste, qui sait effectuer un programme informatique. Un programme informatique est une suite d'instructions simples, stockée dans la mémoire externe, qui ensemble, permettent d'exécuter un algorithme bien plus complexe. L'ensemble de ces instructions est appelé le jeu d'instructions. De par sa taille et complexité, le jeu d'instructions définit les capacités du processeur: les ordinateurs d'aujourd'hui ont donc un jeu d'instructions bien plus grand et complexe que celui utilisé ici. Le jeu d'instructions comporte plusieurs types d'instructions que l'on peut classer en trois grandes familles: les instructions logiques et arithmétiques, les instructions de gestion de mémoire et les instructions de contrôle d'exécution.
-Les instructions logiques et arithmétiques permettent au processeur d'effectuer des opérations mathématiques. Il est important de noter que ces instructions n'opèrent pas directement sur les données stockées en mémoire externe. Au lieu de cela, les valeurs nécessaires sont transférées depuis la mémoire externe vers la mémoire interne du processeur (appelée les registres), sur laquelle on peut opérer. Puis, une fois les opérations terminées, les valeurs sont renvoyées dans la mémoire externe. Ceci est dû au fait que l'accès à la mémoire externe est bien plus lent que celui à la mémoire interne. Mais là où la mémoire interne gagne en vitesse, elle s'écrase lamentablement pour ce qui est de la taille. Ce compromis soulève alors un besoin pour des instructions dédiées aux transferts entre la mémoire externe et interne: les instructions de gestion de mémoire. Finalement, les instructions de contrôle d'exécution proposent une alternative à l'exécution linéaire des instructions. En effet, elles permettent de faire déplacer l'exécution vers une autre partie du programme. Ce déplacement est appelé un branchement. Un branchement devient particulièrement utile lorsqu'il est soumis à une condition. La valeur de vérité d'une proposition mathématique qui implique, ou non, un branchement permet au programme de prendre des décisions sur la suite de l'exécution en fonction du début. Ces branchements conditionnels sont un concept capital pour tout programme informatique. Armé d'un jeu d'instructions qui comporte au minimum ces trois types d'instructions et d'un processeur qui sait les exécuter, l'on a ce que celles et ceux qui l'ont conçu avant nous ont appelé, un CPU (Central Processing Unit). Ou unité centrale de calcul en français.\\
-Les prochaines sous-sections auront pour but d'expliquer plus en détail les différents composants du processeur et de décrire le jeu d'instructions sur lequel nous allons travailler.
+L'objectif de cette section est de concevoir une machine (qu'on appellera processeur), certes théorique mais tout à fait réaliste, qui sait effectuer un programme informatique. Un programme informatique est une suite d'instructions simples, stockée dans la mémoire externe, qui ensemble, permettent d'exécuter un algorithme bien plus complexe. L'ensemble des instructions est appelé le jeu d'instructions. De par sa taille et complexité, le jeu d'instructions définit les capacités du processeur: les ordinateurs d'aujourd'hui ont donc un jeu d'instructions bien plus grand et complexe que celui utilisé ici. Le jeu d'instructions comporte plusieurs types d'instructions que l'on peut classer en trois grandes familles: les instructions logiques et arithmétiques, les instructions de gestion de mémoire et les instructions de contrôle d'exécution.
+Les instructions logiques et arithmétiques permettent au processeur d'effectuer des opérations mathématiques. Il est important de noter que ces instructions n'opèrent pas directement sur les données stockées en mémoire externe. Au lieu de cela, les valeurs nécessaires sont transférées depuis la mémoire externe vers la mémoire interne du processeur (appelée les registres), sur laquelle on peut opérer. Puis, une fois les opérations terminées, les valeurs sont renvoyées dans la mémoire externe. Ceci est dû au fait que l'accès à la mémoire externe est bien plus lent que celui à la mémoire interne. Mais là où la mémoire interne gagne en vitesse, elle s'écrase lamentablement pour ce qui est de la taille. Ce compromis soulève alors un besoin pour des instructions dédiées aux transferts entre la mémoire externe et interne: les instructions de gestion de mémoire. Finalement, les instructions de contrôle d'exécution proposent une alternative à l'exécution linéaire des instructions. En effet, elles permettent de faire déplacer l'exécution vers une autre partie du programme. Ce déplacement est appelé un branchement. Un branchement devient particulièrement utile lorsqu'il est soumis à une condition. La valeur de vérité d'une proposition mathématique qui implique, ou non, un branchement permet au programme de prendre des décisions sur la suite de l'exécution en fonction du début. Ces branchements conditionnels sont un concept capital pour tout programme informatique. Armé d'un jeu d'instructions qui comporte au minimum ces trois types d'instructions et d'un processeur qui sait les exécuter, l'on a ce que celles et ceux qui l'ont conçu avant nous ont appelé, un CPU (Central Processing Unit). Les prochaines sous-sections auront pour but d'expliquer plus en détail les différents composants du processeur et de décrire le jeu d'instructions sur lequel nous allons travailler.
 \pagebreak
 
 \subsection{RAM}
@@ -164,9 +163,9 @@ Le jeu d'instructions regroupe la totalité des opérations que la machine peut 
 \begin{itemize}
     \item \texttt{ldw} (Load Word), copie le contenu d'une adresse ou celle décrite par les registres \texttt{ab} ou \texttt{cd} dans un registre.
     \item \texttt{stw} (Store Word), copie le contenu d'un registre dans une adresse ou celle décrite par les registres \texttt{ab} ou \texttt{cd}.
-    \item \texttt{mvw} (Move Word), copie une valeur immédiate ou le contenu d'un registre dans un autre registre.
-    \item \texttt{add} (Add), additionne une valeur immédiate ou le contenu d'un registre à un autre registre et copie le résultat dans le premier registre.
-    \item \texttt{sub} (Subtract), soustrait une valeur immédiate ou le contenu d'un registre à un autre registre et copie le résultat dans le premier registre.
+    \item \texttt{mvw} (Move Word), copie le contenu d'un registre ou une valeur immédiate dans un autre registre.
+    \item \texttt{add} (Add), additionne le contenu d'un registre ou une valeur immédiate à un autre registre et copie le résultat dans le premier registre.
+    \item \texttt{sub} (Subtract), soustrait le contenu d'un registre ou une valeur immédiate à un autre registre et copie le résultat dans le premier registre.
     \item \texttt{adc} (Add with Carry), effectue l'opération \texttt{add} en ajoutant à l'addition la valeur du drapeau \texttt{carry}.
     \item \texttt{sbb} (Subtract with Borrow), effectue l'operation \texttt{sub} en ajoutant à la soustraction la valeur du drapeau \texttt{borrow}.
     \item \texttt{iec} (Increment/Decrement), incrémente ou décrémente de 1 le contenu d'un registre et stocke le résultat dans ce dernier.
@@ -177,10 +176,13 @@ Le jeu d'instructions regroupe la totalité des opérations que la machine peut 
     \item \texttt{bsl} (Bit Shift Left), décale vers la gauche les bits d'un registre ou des registres \texttt{ab} ou \texttt{cd} et copie le résultat dans ce(s) dernier(s).
     \item \texttt{bsr} (Bit Shift Right), décale vers la droite les bits d'un registre ou des registres \texttt{ab} ou \texttt{cd} et copie le résultat dans ce(s) dernier(s).
     \item \texttt{out} (Out), affiche le contenu d'un registre comme une valeur absolue ou comme une valeur en complément à 2.
-    \item \texttt{halt} (Halt), halte l'éxecution du programme.
+    \item \texttt{halt} (Halt), halte l'éxécution du programme.
 \end{itemize}
-Un programme est constitué d'une séquence de ces instructions. Mais puisque la RAM qui contient le programme ne peut que stocker des nombres sous forme de bytes, chaque instruction doit être traduite en un nombre unique qui sera lui stocké. De cette manière, le processeur pourra comprendre les programmes qu'on lui donne. Cette traduction, qu'on appelle l'assemblage, ne sera pas expliquée ici. \cite{salomon1992assemblers}
+Un programme est constitué d'une séquence de ces instructions. Mais puisque la RAM qui contient le programme ne peut que stocker des nombres sous forme de bytes, chaque instruction doit être traduite en un nombre unique qui sera lui stocké. De cette manière, le processeur pourra comprendre les programmes qu'on lui donne. Ce processus de traduction s'appelle l'assemblage.
 \newpage
+\subsection{Assemblage}
+L'assemblage se charge de traduire le fichier textuel d'un programme en un fichier binaire qui pourra être chargé dans la RAM du processeur afin d’effectuer le programme en question. \cite{salomon1992assemblers} Chaque ligne de code, à l'exception des commentaires et des définitions, est alors traduite de cette manière; puisqu'il y a 16 instructions, on dédie 4 bits pour encoder l'instruction en question. Ensuite, on dédie un bit pour encoder le réglage spécifique de l'instruction. Par exemple pour l'instruction $\texttt{add}$, l'on peut soit additionner un registre à un autre ($\texttt{add a, b}$), soit additionner un registre à une valeur immédiate ($\texttt{add a, 42}$). Le 5-ième bit choisit alors entre ces possibilités. Il nous reste donc, dans un byte, 3 bits avec lesquels on spécifie le registre sur lequel l'instruction à effet. On utilise le ou les byte(s) d'après pour spécifier un deuxième registre, une valeur immédiate, ou une adresse immédiate. Essayons alors d'assembler la ligne de code $\texttt{add a, b}$.\\ $\texttt{add}$ est la 3-ième instruction en partant de 0. Les premiers 4 bits seront alors 0011. On désire additionner deux registres, alors le bit de réglage est 0. Le registre $\texttt{a}$ est le premier, alors les 3 prochains bits sont 000. Finalement le registre $\texttt{b}$ est le deuxième donc le prochain byte est 00000001. Le code traduit est alors 00110000 00000001. Soit, cette ligne de code, une fois assemblée, tiens sur deux bytes. Les ligne de codes assemblées peuvent varier en longueur de un à trois bytes.
+
 \subsection{Exemple de programme}
 Mettons maintenant en œuvre ces instructions.
 Voyons un exemple de programme que notre machine peut effectuer. Il s'agit ici de calculer un certain nombre de termes de la suite de Fibonacci. Notons pour rappel que la suite de Fibonacci $(F_n)_{n\in\mathbb{N}}$ est définie comme tel:
@@ -198,14 +200,7 @@ Voici alors le programme:
 \end{figure}
 \\
 Ce programme, une fois assemblé et exécuté par le processeur, affichera à la console: 0, 1, 1, 2, 3. Soit les 5 premiers termes de la suite de Fibonacci.
-Ici, la valeur de 5 est choisie arbitrairement. Le programme aurait pu calculer jusqu'à n'importe quel terme, tant que ce terme n'excède pas 255. Dans quel cas les résultats affichés seraient réduits modulo 256. Dans la prochaine section nous traiterons en détail plus spécifiquement des instructions arithmétiques et leurs impacts sur le registre des drapeaux.
-\vspace{2cm}
-\begin{figure}[htp]
-    \centering
-    \includegraphics[width=12cm]{images/quote.png}
-    \label{fig:quote}
-\end{figure}
-\newpage
+Ici, la valeur de 5 est choisie arbitrairement. Le programme aurait pu calculer jusqu'à n'importe quel terme, tant que ce terme n'excède pas 255. Dans quel cas les résultats affichés seraient réduits modulo 256. Pour exécuter un tel programme on utilise un émulateur. L'émulateur prend en entrée un programme assemblé et effectue un par un chaque instruction en utilisant une RAM et des registres simulés. C'est donc équivalent à faire tourner le programme sur une vraie machine physique. Dans la prochaine section nous traiterons en détail plus spécifiquement des instructions arithmétiques et leurs impacts sur le registre des drapeaux.
 \section{Opérations sur entiers}
 \subsection{Addition}
 L'addition est une opération native au processeur, gérée par les instructions \texttt{add} et \texttt{adc}.
@@ -292,7 +287,11 @@ On distribue pour obtenir
 $$x\cdot a_02^0+x\cdot a_12^1+\cdot\cdot\cdot+x\cdot a_72^7.$$
 Et puisque $x\cdot2^n$ est égal à $n$ décalages de $x$ vers la gauche, 
 le problème est résolu. Par exemple, multiplier $x$ par 10 revient à évaluer $x$\verb|<<|1 + $x$\verb|<<|3.\\
-Le deuxième cas est plus complexe. La multiplication par addition répétée est souvent découragée car elle devient beaucoup moins efficace que d'autres méthodes plus sophistiquées quand les facteurs deviennent de plus en plus grand. Mais étant donné que nous travaillons sur des valeurs plutôt petites, la simplicité offerte par cette méthode naïve en vaut la peine. C'est alors par addition répétée que nous procéderons.
+Le deuxième cas est plus complexe. La multiplication par additions répétées,
+$$
+x\cdot y = \underbrace{x+x+\cdot\cdot\cdot+x}_{y\text{ fois}},
+$$
+est souvent découragée car elle devient beaucoup moins efficace que d'autres méthodes plus sophistiquées quand les facteurs deviennent de plus en plus grand. Mais étant donné que nous travaillons sur des valeurs plutôt petites, la simplicité offerte par cette méthode naïve en vaut la peine. C'est alors par additions répétées que nous procéderons.
 \section{Opérations sur nombres non entiers}
 Afin de répondre à un plus grand nombre de problèmes mathématiques il sera utile de travailler non pas que sur des entiers mais également sur les rationaux qui les entourent. Il s'agit donc de définir une représentation et des opérations élémentaires pour ces valeurs fractionnelles.
 \subsection{Représentation à virgule flottante}
@@ -344,14 +343,44 @@ on remarque qu'il suffit de multiplier les signes, les mantisses et d'additionne
 \subsection{Division de floats}
 Pour diviser deux floats nous allons multiplier l'un par l'inverse de l'autre. Nous détaillerons ci-dessous une manière très efficace de trouver une approximation de la réciproque d'un float. Cette approximation pourra ensuite être améliorée avec quelques itérations de la méthode de Newton.
 \subsubsection{La méthode de Newton}
-La méthode de Newton est un algorithme efficace pour trouver numériquement les zeros d'une fonction. Pour une fonction à variable réelle $f$, un $x_0$ proche du zéro à trouver et un $f$ dérivable et de dérivée non nulle en $x_0$, généralement, une meilleur estimation du zéro est trouvable par:
-$$x_1 = x_0-\frac{f(x_0)}{f'(x_0)}.$$
-Cette méthode peut ensuite être itérée pour obtenir un résultat aussi proche que désiré:
-$$x_{n+1} = x_n-\frac{f(x_n)}{f'(x_n)}.$$
+La méthode de Newton est un algorithme efficace pour trouver numériquement les zéros d'une fonction. Afin de la comprendre, admettons que nous essayons de trouver un zéro de la fonction $f(x) = x^2-1$. Nous avons une estimation initiale $x_0 = 3$. C'est à dire que nous pensons que le zéro cherché n'est pas trop loin de 3. En traçant la tangente à la courbe $f(x)$ en $x_0$, on s'aperçoit que le croisement entre cette tangente et l'axe des abscisses nous donne une meilleure estimation du zéro de la fonction. En procédant itérativement, on s'approche de plus en plus du zéro.
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[xmin=0, xmax=3, ymin=-2, ymax=8,
+             axis lines=middle,
+             xtick={1, 2, 3, 4},
+             xticklabels={1, 2, 3, 4},
+             ytick={-2, 0.004 , 2, 4, 6, 8},
+             yticklabels={-2, 0, 2, 4, 6, 8},
+             xticklabel style={anchor=north},
+             legend pos=south east
+             ]
+\addplot[thick, domain=0:3, color=black, samples=100] {x^2-1} node [left, pos=0.9] {$f(x)$};
+\addplot[thick, domain=5/3:3, dashed, color=black = 10] {6*x-10};
+\addplot[color = black, mark = *, only marks, mark size = 1pt] coordinates {(3, 0) (3, 8) (5/3, 0) (5/3, 16/9) (17/15, 0)};
+\addplot[thick, domain=17/15:5/3, dashed, color=black = 10] {16/9+(10/3)*(x-5/3)};
+\addplot[color = black, densely dashed,] coordinates {(3, 0) (3,8)};
+\addplot[color = black, densely dashed,] coordinates {(5/3, 0) (5/3,16/9)};
+\node [above left] at (3, 0) {$x_0$};
+\node [below] at (5/3, 0) {$x_1$};
+\node [below] at (17/15, 0) {$x_2$};
+\end{axis}
+\end{tikzpicture}
+\end{center}
+La tangente à $f(x)$ en $x_0$ est donnée par $f(x_0)+f'(x_0)(x-x_0)$. Alors $f(x_0)+f'(x_0)(x_1-x_0) = 0$.
+En isolant $x_1$, on trouve
+$$
+x_1 = x_0-\frac{f(x_0)}{f'(x_0)}.
+$$
+Et plus généralement
+$$
+x_{n+1} = x_n-\frac{f(x_n)}{f'(x_n)}.
+$$
+Notons que dans certains cas, la méthode ne parviendra pas à converger vers le zéro désiré. Par exemple dans le cas trivial où $f'(x_n) = 0$ mais $f(x_n) \not = 0$. Dans ce cas la division par $f'(x_n)$ n'est pas définie. Graphiquement, la tangente est parallèle à l'axe des abscisses et donc ne la croise jamais. Une autre raison d'échec potentiel serait que la méthode converge vers un zéro non désiré. Ceci arrive si l'on choisit un $x_0$ trop loin du zéro désiré.
 \subsubsection{Approximation de la réciproque}
 Pour calculer la réciproque d'un float, notons d'abord qu'un float $\alpha$ est un nombre de 16 bits que l'on interprète comme un float. Dans quel cas, la valeur de $\alpha$, qu'on appelle $\alpha_f$ est donnée par
 $$\alpha_f=\left(1+\frac{M_{s,\alpha}}{2^{10}}\right)\cdot 2^{E_{s,\alpha}-15}.\,\footnote{Le signe n'est pas pris en compte, on admet que le float est positif. Dans le cas contraire, il suffit de multiplier par -1 le résultat obtenu.}$$\\
-Mais si l'on interprète $\alpha$ comme un entier, sa valeur $\alpha_i$ (appelée representation entière de $\alpha$) est donnée par
+Mais si l'on interprète $\alpha$ comme un entier, sa valeur $\alpha_i$ (appelée représentation entière de $\alpha$) est donnée par
 $$\alpha_i=2^{10}E_{s, \alpha} + M_{s, \alpha}.$$
 En sachant ceci, prenons maintenant le logarithme base 2 de $\alpha_f$
 \begin{align*}
@@ -431,6 +460,22 @@ $$\begin{cases}
 \end{cases}
 $$
 Voici alors une méthode complète pour calculer la réciproque d'un float et, muni de l'algorithme de multiplication décrit dans la dernière section, nous pouvons calculer la division de deux floats arbitraires.
+\subsubsection{Implémentation et résultats}
+L’implémentation de cette méthode est très simple. Il s'agit dans un premier temps d'additionner $m$ à la représentation entière du float, puis d'appliquer la méthode de Newton. Puisque cette dernière opère sur des floats et non des entiers, il faut se servir des méthodes d'addition et de multiplication de floats définies plus haut. Il s'est avéré qu'une seule itération de la méthode de Newton suffisait et que des itérations supplémentaires avaient même tendance à empirer l'approximation.
+Pour vérifier expérimentalement la précision de notre méthode, on désire comparer un résultat obtenu par notre processeur à un résultat obtenu par un processeur moderne. Nous vérifierons ici que les inverses des nombres positifs, puisque la fonction inverse est impaire. Etant donné que le nombre de floats de 16 bits positifs est plutôt limité, on calcule alors pour chaque float, son inverse avec un processeur moderne et avec notre processeur. Soit, pour la suite de floats $x_k$ où les $k$ varient entre 1 et 31743 (la représentation entière du float maximal), on calcule les suites $y_k$ et $\hat{y_k}$ qui représentent les valeurs exactes et approximées respectivement. On définit ensuite l'erreur absolue $r_k = |y_k-\hat{y_k}|$. Pour trouver l'erreur moyenne absolue, l'on ne peut pas simplement calculer la moyenne des termes de $r_k$. En effet, puisque les floats sont de moins en moins denses lorsqu'on s'éloigne de 0, calculer la moyenne des termes de $r_k$ accorderait une plus grande importance à la précision autour de 0.\\
+Pour remédier à ce problème nous désirons trouver la valeur moyenne de la fonction obtenue en reliant les points de $r_k$. La valeur moyenne d'une fonction $f(x)$ sur l'intervalle $[a;b]$ est donnée par
+$$
+\Bar{f} = \frac{1}{b-a}\int_a^bf(x)\;dx
+$$
+Dans notre cas, puisque $f(x)$ est la fonction qui relie les points de $r_k$, l'aire sous sa courbe est donnée en sommant les trapèzes entre les points reliés. L'aire d'un tel trapèze est alors $\frac12(r_i+r_{i+1})(x_{i+1}-x_i)$.
+On définit donc la moyenne de l'erreur absolue comme
+$$
+\Bar{r} = \frac{1}{x_b-x_a}\sum_{i=a}^{b-1}\frac{(r_i+r_{i+1})(x_{i+1}-x_i)}2.
+$$
+Avec $a$ et $b$ les bornes inférieures et supérieures des indices de la suite $x_k$. Dans notre cas, on trouve $\Bar{r} \approx 0.0001$.
+
+
+
 
 \subsection{Calcul de fonctions trigonométriques}
 Les méthodes d'approximation de fonctions trigonométriques sont variées, celle expliquée ci-dessous n'a pas tant été choisie pour son efficacité que pour son élégance et simplicité. Elle repose sur cette observation:
@@ -439,9 +484,9 @@ Remarquons que pour l'instant les seules fonctions que notre machine peut évalu
 Les séries de Taylor sont un outil puissant pour approximer les fonctions avec des polynômes. Admettons que nous avons une fonction $f(x)$ et que nous voulons un polynôme $P_n(x)$ qui approxime $f(x)$ autour de $a$. C'est a dire que plus $x$ s'éloigne de $a$, plus $P_n(x)$ s'éloigne de $f(x)$. Soit,
 $$P_n(x) = c_0 + c_1(x-a) + c_2(x-a)^2+\cdot\cdot\cdot+c_n(x-a)^n.$$
 Les coefficients $c_0, \cdot\cdot\cdot,c_n$ restent alors à déterminer.
-Il parait intuitif que en $P_n(a)$ devrait être égal à $f(a)$. Puisque $P_n(a) = c_0$, on en déduit $c_0=f(a)$. Ensuite, en continuant avec intuition, on décide que $P_n'(a) = f'(a)$. Et plus géneralement $P_n^{(k)}(a) = f^{(k)}(a)$ pour tout $k\le n$, ou $f^{(k)}(x)$ désigne la $k$-ième dérivée de $f(x)$. En dérivant $k$ fois $P_n(x)$ on obtient
+Il parait intuitif que $P_n(a)$ devrait être égal à $f(a)$. Puisque $P_n(a) = c_0$, on en déduit $c_0=f(a)$. Ensuite, en continuant avec intuition, on décide que $P_n'(a) = f'(a)$. Et plus généralement $P_n^{(k)}(a) = f^{(k)}(a)$ pour tout $k\le n$, ou $f^{(k)}(x)$ désigne la $k$-ième dérivée de $f(x)$. En dérivant $k$ fois $P_n(x)$ on obtient
 $$
-P_n^{(k)}(x) = c_kk!+c_{k+1}k!(x-a)^{k+1}+\cdot\cdot\cdot+c_n(x-a)^n.
+P_n^{(k)}(x) = c_kk!+c_{k+1}(k+1)!(x-a)+\cdot\cdot\cdot+c_n\frac{n!}{(n-k)!}(x-a)^{n-k}.
 $$
 Alors $P_n^{(k)}(a) = c_kk!\;$, soit $c_k = \frac{f^{(k)}(a)}{k!}$.\\
 Donc
@@ -449,7 +494,7 @@ $$P_n(x) = f(a) + f'(a)(x-a) + \frac{f''(a)}{2!}(x-a)^2+\cdot\cdot\cdot+\frac{f^
 Plus $n$ est grand, plus l'approximation est bonne.
 On alors
 $$f(x) = \sum_{k=1}^{\infty}\frac{f^{(k)}(a)}{k!}(x-a)^k.$$
-La série associée ici à la fonction $f$ est appelée la série de Taylor de $f$ autour de $a$. Montrer qu'une fonction est égale à sa série de Taylor est un exercice plus compliqué et ne sera donc pas détaillé ici. Heureusement la grande partie des fonctions utilisées couramment le sont.
+La série associée ici à la fonction $f$ est appelée la série de Taylor de $f$ autour de $a$. Montrer qu'une fonction est en vérité égale à sa série de Taylor est un exercice plus compliqué et ne sera donc pas détaillé ici. Heureusement la grande partie des fonctions utilisées couramment le sont.
 \subsubsection{Application des séries de Taylor pour le calcul de fonctions trigonométriques}
 Maintenant que nous avons un outil pour convertir des fonctions en polynômes, essayons de l'appliquer sur les fonctions que nous voulons évaluer.
 Par exemple, en prenant $f(x) = \sin(x)$ et $a = 0$ on obtient la série de Taylor de $\sin(x)$ autour de 0, 
@@ -459,7 +504,7 @@ $$\cos(x) = 1 - \frac{x^2}{2!} + \frac{x^4}{4!} - \frac{x^6}{6!} + \cdot\cdot\cd
 En tronquant les séries ci-dessus à un nombre approprié de termes on obtient une expression qui est facilement évaluable par notre machine.
 Vérifions maintenant graphiquement la précision de ces approximations.
 \begin{center}
-\begin{tikzpicture}
+\begin{tikzpicture}[scale = 1]
 \begin{axis}[xmin=-2*pi, xmax=2*pi, ymin=-2, ymax=2,
              axis lines=middle,
              xtick={-2*pi, -3*pi/2, -pi, -pi/2, 0, pi/2, pi, 3*pi/2, 2*pi},
@@ -474,7 +519,8 @@ Vérifions maintenant graphiquement la précision de ces approximations.
 \end{axis}
 \end{tikzpicture}
 \end{center}
-Comparons ici la fonction $\sin(x)$ et son approximation de Taylor tronquée à 5 termes, soit $x-\frac{x^3}{3!}+\frac{x^5}{5!}-\frac{x^7}{7!}+\frac{x^9}{9!}$. On s'arrête à 5 termes car le prochain impliquerait une multiplication par $\frac{1}{11!} \approx 2.5 \cdot 10^{-8}$ ce qui est inférieur a la valeur minimale représentable par nos floats ($\approx 6 \cdot 10^{-8})$. Intuitivement, il semblerait qu'il nous faut juste une approximation sur le segment $[0; 2\pi]$ et ensuite la périodicité de la fonction permettrait une approximation sur tout les réels. Pourtant, la meilleure approximation possible avec nos limitations physiques commence déjà à se dégrader autour de $x = \pi$. Pour remédier à ce problème, remarquons qu'on peut séparer la fonction en segments de longueur $\pi$ qui sont tous des symétries du premier segment $[-\frac{\pi}{2}; \frac{\pi}{2}]$ (sur lequel l'approximation semble plutôt rapprochée de la valeur exacte). C'est à dire que le premier segment encode toute l'information nécessaire pour représenter le reste de la fonction. Il faut alors un algorithme qui peut rabattre tout nombre sur son équivalent dans le segment $[-\frac{\pi}{2}; \frac{\pi}{2}]$. Soit, $x\rightarrow \theta$ avec $x \in \mathbb{R}$, $\sin(x) = \sin(\theta)$ et $\theta \in [-\frac{\pi}{2}; \frac{\pi}{2}]$. Ci-dessous est détaillé le pseudocode d'un tel algorithme:
+Comparons ici la fonction $\sin(x)$ et son approximation de Taylor tronquée à 5 termes, soit $x-\frac{x^3}{3!}+\frac{x^5}{5!}-\frac{x^7}{7!}+\frac{x^9}{9!}$. On s'arrête à 5 termes car le prochain impliquerait une multiplication par $\frac{1}{11!} \approx 2.5 \cdot 10^{-8}$ ce qui est inférieur a la valeur minimale représentable par nos floats ($\approx 6 \cdot 10^{-8})$. Intuitivement, il semblerait qu'il nous faut juste une approximation sur le segment $[0; 2\pi]$ et ensuite la périodicité de la fonction permettrait une approximation sur tout les réels. Pourtant, la meilleure approximation possible avec nos limitations physiques commence déjà à se dégrader autour de $x = \pi$. Pour remédier à ce problème, remarquons qu'on peut séparer la fonction en segments de longueur $\pi$ qui sont tous des symétries du premier segment $[-\frac{\pi}{2}; \frac{\pi}{2}]$ (sur lequel l'approximation semble plutôt rapprochée de la valeur exacte). C'est à dire que le premier segment encode toute l'information nécessaire pour représenter le reste de la fonction. Il faut alors un algorithme qui peut rabattre tout nombre dans sur son équivalent dans le segment $[-\frac{\pi}{2}; \frac{\pi}{2}]$. Soit, $x\rightarrow \theta$ avec $x \in \mathbb{R}$, $\sin(x) = \sin(\theta)$ et $\theta \in [-\frac{\pi}{2}; \frac{\pi}{2}]$. Ci-dessous est détaillé le pseudocode d'un tel algorithme:
+\newpage
 \begin{algorithm}
 \begin{algorithmic}[1]
 \State $\theta \gets x\;\%\;2\pi$
@@ -492,11 +538,15 @@ Comparons ici la fonction $\sin(x)$ et son approximation de Taylor tronquée à 
 \end{algorithmic}
 \end{algorithm}
 
-Ici, l'opération \%, présente à la première ligne de l'algorithme, dénote l'opération tel que la relation $x\;\%\;y = z$ soit vraie si ces 3 conditions sont réunies: $x = z +ky$, $k \in \mathbb{Z}$ et $0\le z<y$. Cette opération est facilement calculable par notre machine en effectuant $z = x-y\cdot\text{trunc}(\frac{x}{y})$. Où $\text{trunc}(x)$ est la fonction qui associe à un réel $x$, sa partie entière. Ce qui est plutôt simple à faire avec un float.
+Ici, l'opération \%, présente à la première ligne de l'algorithme, dénote l'opération tel que la relation $x\;\%\;y = z$ soit vraie si ces 3 conditions sont réunies: $x = z +ky$, $k \in \mathbb{Z}$ et $0\le z<y$. Cette opération est facilement calculable par notre machine en effectuant $z = x-y\cdot\text{trunc}(\frac{x}{y})$. Où $\text{trunc}(x)$ est la fonction qui associe à un réel $x$, sa partie entière. Ce qui est assez simple à faire avec un float.
 Une fois $\theta$ trouvé, il suffit d'évaluer la série de Taylor en $\theta$.
 Pour approximer $\cos(x)$ on utilise une méthode similaire, mais puisque $\cos(x)$ est positif sur le segment $[-\frac{\pi}{2}; \frac{\pi}{2}]$, il n'existe pas un $\theta$ compris dans ce segment tel que $\cos(x) = cos(\theta),\;\forall x \in \mathbb{R}.$ On peut en revanche trouver $\theta$, tel que $|\cos(x)| = cos(\theta)$, et le signe du résultat final, qu'on applique au résultat obtenu après l'évaluation de la série.
+\subsubsection{Implémentation et résultats} 
+Lors de l'implémentation, on remarque que le facteur limitant de la précision est l'opération \%, présente à la première ligne de l'algorithme. Pour cette raison une erreur absolue maximale $< 0.01$, n'est que garantie pour $x<34$. Mais puisqu'en pratique l'on calcule rarement le sinus ou le cosinus d'un nombre plus grand que $2\pi$, nous allons utiliser les bornes $-2\pi$ et $2\pi$ pour le calcul de l'erreur absolue moyenne. En procèdent de la même manière que précédemment pour la fonction inverse, on obtient, pour sinus, une erreur absolue moyenne de $\Bar{r}\approx 0.001$ et pour cosinus, une erreur absolue moyenne de $\Bar{r}\approx0.0008$.
+
 \section{Calcul de décimales de pi}
-En utilisant la répresentation float, la meilleur approximation possible de $\pi$ est égale à 3.140625. Alors, essayer de calculer un maximum de décimales de $\pi$ sous la forme d'un float est un exercice un peu décevant. Heureusement il existe des algorithmes qui ne travaillent que sur des entiers, et qui produisent, iterativement, des décimales de $\pi$. L'algorithme utilisé ici, découvert par Rabinowitz et Wagon en 1995 \cite{rabinowitz1995spigot}, est lui même basé sur un autre algorithme pour calculer les décimales de $e$, découvert par Sale en 1968 \cite{sale1968e} que nous allons détailler en premier afin de mieux comprendre celui pour $\pi$. Cet algorithme se base sur la somme infinie ci-dessous.
+\subsection{Méthode}
+En utilisant la représentation float, la meilleur approximation possible de $\pi$ est égale à 3.140625. Alors, essayer de calculer un maximum de décimales de $\pi$ sous la forme d'un float est un exercice un peu décevant. Heureusement il existe des algorithmes qui ne travaillent que sur des entiers, et qui produisent, itérativement, des décimales de $\pi$. L'algorithme utilisé ici, découvert par Rabinowitz et Wagon en 1995 \cite{rabinowitz1995spigot}, est lui même basé sur un autre algorithme pour calculer les décimales de $e$, découvert par Sale en 1968 \cite{sale1968e} que nous allons détailler en premier afin de mieux comprendre celui pour $\pi$. Cet algorithme se base sur la somme infinie ci-dessous.
 $$
 e = \frac{1}{0!}+\frac{1}{1!}+\frac{1}{2!}+\frac{1}{3!}+\frac{1}{4!}+\frac{1}{5!}\cdot\cdot\cdot
 $$
@@ -547,7 +597,18 @@ $$
 $$
 =10 + \frac{1}{3}\Bigl(2+\frac{2}{5}\Bigl(2+\frac{3}{7}\Bigl(0+\frac{4}{9}\Bigl(2\Bigr)\Bigr)\Bigr)\Bigr)
 $$
-Puisque la prochaine décimale est un 10 on en déduit donc que la première décimale (ou chiffre dans ce cas) de $\pi$ est un 3. En continuant de la même manière l'on peut aisément calculer le reste des décimales offertes par cette approximation. Cette explication omet, par volonté de simplifier, certains aspects. Mais l'idée générale reste la même. Pour programmer cette algorithme on représente l'approximation comme une liste de 2 sur laquelle il est facile de manipuler chaque entrée en fonction de sa position dans la liste. Il parait intuitif que plus la liste est grande, meilleure l'approximation sera et donc plus on aura de décimales correctes. Puisque dans notre cas l'espace de mémoire est une contrainte plutôt importante il sera important d'écrire un programme le plus court possible, de sorte à pouvoir utiliser le reste de la mémoire pour une liste de taille maximale. Dans notre cas il a été possible d'écrire un programme assez court pour que la liste aie 32'485 entrées de 16 bits. Ceci a résulté en une approximation de pi correcte jusqu'à 9723 décimales. Notons que ceci n'a absolument aucune utilité pratique, puisque seulement 38 décimales suffisent pour calculer le périmètre d'un disque de la taille de l'univers observable avec une précision de l'ordre du rayon d'un atome d'hydrogène. \cite{yates_2024}
+Puisque la prochaine décimale est un 10 on en déduit donc que la première décimale (ou chiffre dans ce cas) de $\pi$ est un 3. En continuant de la même manière l'on peut aisément calculer le reste des décimales offertes par cette approximation. Cette explication omet, par volonté de simplifier, certains aspects. Mais l'idée générale reste la même. 
+\subsection{Implémentation et résultats}
+Pour implémenter cet algorithme on représente l'approximation comme une liste remplie de 2, sur laquelle il est facile de manipuler chaque entrée en fonction de sa position dans la liste. Il parait intuitif que plus la liste est grande, meilleure l'approximation sera et donc plus on aura de décimales correctes. Puisque dans notre cas l'espace de mémoire est une contrainte plutôt importante il sera important d'écrire un programme le plus court possible, de sorte à pouvoir utiliser le reste de la mémoire pour une liste de taille maximale. Dans notre cas il a été possible d'écrire un programme assez court pour que la liste aie 32'485 entrées de 16 bits. En effectuant 10'000 itérations, on obtient alors 10'000 décimales de $\pi$. Après avoir comparé les décimales obtenues avec les décimales correctes, on s'aperçoit que nos décimales ne diffèrent qu'à partir de la 9724-ème décimale. Soit, notre processeur a correctement calculé 9723 décimales de $\pi$. Notons que ce résultat, bien qu'impressionnant, n'a absolument aucune utilité pratique, puisque seulement 38 décimales suffisent pour calculer le périmètre d'un disque de la taille de l'univers observable avec une précision de l'ordre du rayon d'un atome d'hydrogène. \cite{yates_2024}
+\section{Conclusion}
+Mieux comprendre les outils qu'on utilise, permet de les exploiter au maximum de leur capacités. Ce travail a exploré quelques-uns des concepts fondamentaux présents dans tous les ordinateurs modernes. En effet, bien que notre machine soit beaucoup plus simple que celles d'aujourd'hui, les bases restent les mêmes. Cependant, cette simplicité entraîne une précision inférieur au standards modernes. Les limitations physique de notre machine étaient l'obstacle majeur qu'il a fallu au mieux contourner. Une autre limitation majeure, qui n'a pas été traitée dans ce travail, est celle du temps d’exécution. En effet, avec un processeur émulé il est difficile de savoir combien de temps un programme aurait prit si il avait exécuté par une vraie machine. En tout, ce travail montre que bien que ça puisse parfois paraître être le cas, rien en informatique est de l'ordre de la magie. Tout peut être ramené à une poignée d'opérations simples réalisables par n'importe qui.
+\vspace{5cm}
+\begin{figure}[htp]
+    \centering
+    \includegraphics[width=12cm]{images/quote.png}
+    \label{fig:quote}
+\end{figure}
+
 \newpage
 \printbibliography
 
