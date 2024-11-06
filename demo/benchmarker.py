@@ -1,8 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
-import random as rd
 
-with open("demo/inv.txt", mode='r') as file:
+with open("repo/demo/cos.txt", mode='r') as file:
     data = file.read()
     file.close()
 
@@ -18,13 +17,13 @@ for i in range(len(data)): # compute function for entire float range
 
 x_values = []
 y_values = []
-for i in range(1 , 1007): # 31743
+for i in range(0 , 17993): # 31743
     x_values.append(float(np.asarray(i, dtype=np.int16).view(np.float16).item()))
     y_values.append(float(np.asarray(y_values_all[i], dtype=np.int16).view(np.float16).item()))
 
 x_values = np.array(x_values)
 y_values = np.array(y_values)
-ref_y_values = 1/(x_values)
+ref_y_values = np.cos(x_values)
 
 rel_error = 100*(np.abs((ref_y_values-y_values)/ref_y_values))
 abs_error = np.abs(ref_y_values-y_values)
@@ -36,10 +35,15 @@ for i in range(len(x_values)-1):
 
 mean = sum/(x_values[-1]- x_values[0])
 
-plt.plot(x_values, ref_y_values, 'bo')
-plt.plot(x_values, y_values, 'ro')
-plt.plot(x_values, abs_error, 'go')
-plt.title("Function approx")
+font = {'fontname':'a'}
+#plt.xscale('log')
+plt.xlabel("x")
+plt.ylabel("Erreur absolue")
+#plt.plot(x_values, ref_y_values, 'bo')
+#plt.plot(x_values, y_values, 'ro')
+plt.plot(x_values, abs_error, 'k')
+#plt.title("Erreur absolue en fonction du log(x)", **font)
+
 plt.show()
 
 

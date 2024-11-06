@@ -76,7 +76,7 @@ Supervisé par Micha Hersch
 \hfill
 Écrit par Lukan Morel
 \vspace{2cm} \ \\
-Renens, 31 février 2024
+Renens, 7 novembre 2024
 \end{titlepage}
 \pagebreak
 \markboth{Conception et programmation d'un ordinateur 8 bits}{}
@@ -248,7 +248,7 @@ Le décalage de bits est une opération native au processeur, gérée par les in
 \texttt{bsl x}
 \end{center}
 avec x un registre.
-Alors le résultat sera stocké dans le registre \texttt{x}. Le décalage de bits consiste a décaler les bits d'une valeur vers la gauche ou vers la droite.
+Alors le résultat sera stocké dans le registre \texttt{x}. Le décalage de bits consiste à décaler les bits d'une valeur vers la gauche ou vers la droite.
 L'opération est notée \texttt{x}\verb| << |1 pour un décalage vers la gauche ou \texttt{x}\verb| >> |1 pour un décalage vers la droite.
 L'on peut considérer ces opérations comme une multiplication par deux et une division à partie entière par deux respectivement. Soit, 
 \begin{align*}
@@ -303,7 +303,7 @@ Le standard utilisé universellement pour représenter des valeurs fractionnelle
 \end{itemize}
 Ces trois parties sont telles que la valeur du float est donnée par $s\cdot M\cdot 2^E$.\\
 Ce système s'apparente à être l'équivalent de la notation scientifique pour le binaire.
-Il reste maintenant la question de comment encoder ces trois parties dans un espace fini et compact. Nous allons choisir comme taille 16 bits. L'encodage du signe $s$ est intuitif, nous pouvons y dédier le premier bit (0 si $s$ = 1, 1 si $s$ = -1). La taille de l'exposant déterminera l'ordre de grandeur minimal et maximal de nos floats. Si l'on attribue 5 bits à l'exposant, ce dernier peut avoir $2^5 = 32$ valeurs différentes. Étant donné qu'il nous faut aussi des exposants négatifs nous pouvons ajouter un biais à l'exposant. C'est-à-dire que l'exposant $E = E_s - 15$ où $E_s$ est l'entier véritablement représente par les 5 bits dédiés. Les valeurs sont donc bornées par $2^{-15}$ et $2^{16}$. Il nous reste alors 10 bits pour la mantisse.
+Il reste maintenant la question de comment encoder ces trois parties dans un espace fini et compact. Nous allons choisir comme taille 16 bits. L'encodage du signe $s$ est intuitif, nous pouvons y dédier le premier bit (0 si $s$ = 1, 1 si $s$ = -1). La taille de l'exposant déterminera l'ordre de grandeur minimal et maximal de nos floats. Si l'on attribue 5 bits à l'exposant, ce dernier peut avoir $2^5 = 32$ valeurs différentes. Étant donné qu'il nous faut aussi des exposants négatifs nous pouvons ajouter un biais à l'exposant. C'est-à-dire que l'exposant $E = E_s - 15$ où $E_s$ est l'entier véritablement représenté par les 5 bits dédiés. Les valeurs sont donc bornées par $2^{-15}$ et $2^{16}$. Il nous reste alors 10 bits pour la mantisse.
 Notons que, comme en notation scientifique, la mantisse $M$ doit pouvoir représenter des valeurs non entières dans l'intervalle $[1; 2[$. Notons ensuite que toutes les valeurs incluses dans cet intervalle ont comme partie entière 1. Puisque la partie entière est constante, il n'est pas nécessaire de la stocker. Soit, la mantisse $M = 1+2^{-10}M_s)$ où $M_s$ est l'entier véritablement stocké par les 10 bits dédiés. Finalement, la valeur d'un float est donnée par
 $$(-1)^{s_s}\left(1+\frac{M_s}{2^{10}}\right)\cdot 2^{E_s-15},\text{ ou $s_s$ est la valeur du premier bit.}$$
 Cette formule n'est pas générale, dans certain cas spéciaux le float doit être interprété différemment. Ceci est nécessaire pour représenter des valeurs comme 0 ou $\pm\infty$.
@@ -461,8 +461,30 @@ $$\begin{cases}
 $$
 Voici alors une méthode complète pour calculer la réciproque d'un float et, muni de l'algorithme de multiplication décrit dans la dernière section, nous pouvons calculer la division de deux floats arbitraires.
 \subsubsection{Implémentation et résultats}
-L’implémentation de cette méthode est très simple. Il s'agit dans un premier temps d'additionner $m$ à la représentation entière du float, puis d'appliquer la méthode de Newton. Puisque cette dernière opère sur des floats et non des entiers, il faut se servir des méthodes d'addition et de multiplication de floats définies plus haut. Il s'est avéré qu'une seule itération de la méthode de Newton suffisait et que des itérations supplémentaires avaient même tendance à empirer l'approximation.
-Pour vérifier expérimentalement la précision de notre méthode, on désire comparer un résultat obtenu par notre processeur à un résultat obtenu par un processeur moderne. Nous vérifierons ici que les inverses des nombres positifs, puisque la fonction inverse est impaire. Etant donné que le nombre de floats de 16 bits positifs est plutôt limité, on calcule alors pour chaque float, son inverse avec un processeur moderne et avec notre processeur. Soit, pour la suite de floats $x_k$ où les $k$ varient entre 1 et 31743 (la représentation entière du float maximal), on calcule les suites $y_k$ et $\hat{y_k}$ qui représentent les valeurs exactes et approximées respectivement. On définit ensuite l'erreur absolue $r_k = |y_k-\hat{y_k}|$. Pour trouver l'erreur moyenne absolue, l'on ne peut pas simplement calculer la moyenne des termes de $r_k$. En effet, puisque les floats sont de moins en moins denses lorsqu'on s'éloigne de 0, calculer la moyenne des termes de $r_k$ accorderait une plus grande importance à la précision autour de 0.\\
+L’implémentation de cette méthode est très simple. Il s'agit dans un premier temps d'additionner $m$ à la représentation entière du float, puis d'appliquer la méthode de Newton. Puisque cette dernière opère sur des floats et non des entiers, il faut se servir des méthodes d'addition et de multiplication de floats définies plus haut. Il s'est avéré qu'une seule itération de la méthode de Newton suffisait et que des itérations supplémentaires avaient même tendance à empirer l'approximation. Cette affirmation n'étant pas évidente à comprendre, visualisons les résultats que donnent plusieurs itérations de la méthode de Newton.
+\newpage 
+Essayons alors de calculer l'inverse d'un nombre, par exemple le nombre d'or $\phi$. En faisant varier le nombre d'itérations, on obtient un graphique comme ceci:
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[xlabel={Nombre d'itérations de la méthode de Newton},
+             ylabel={Résultat},
+             xmin=0, xmax=3, ymin=0.6, ymax=0.66,
+             axis lines=left,
+             xtick={0.001, 1, 2, 3},
+             xticklabels={0, 1, 2, 3},
+             ytick={0.60002, 0.62, 0.64, 0.66},
+             yticklabels={0.6, 0.62, 0.64, 0.66},
+             xticklabel style={anchor=north},
+             legend pos=south east
+             ]
+\addplot[color = black, mark = *, only marks, mark size = 2pt] coordinates {(0, 1330/2048) (1, 1264/2048) (2, 1268/2048) (3, 1268/2048)};
+\addplot[thick, domain=0:3, dashed, color=black = 10] {2/(1+sqrt(5)} node [pos=0.9, above] {$y=\frac{1}{\phi}$};
+\end{axis}
+\end{tikzpicture}
+\end{center}
+On s'aperçoit que le résultat est le plus proche de la valeur exacte après une seule itération. En effet, l'imprécision introduite par les opérations nécessaires à une itération supplémentaire est supérieure à la précision apportée par cette dernière. Ce phénomène apparaît d'ailleurs pour tous les nombres, pas seulement pour notre exemple.
+
+Pour vérifier expérimentalement la précision de notre méthode, on désire comparer un résultat obtenu par notre processeur à un résultat obtenu par un processeur moderne. Nous vérifierons ici uniquement les inverses des nombres positifs, puisque la fonction inverse est impaire. Étant donné que le nombre de floats de 16 bits positifs est plutôt limité, on calcule alors pour chaque float, son inverse avec un processeur moderne et avec notre processeur. Soit, pour la suite de floats $x_k$ où les $k$ varient entre 1 et 31743 (la représentation entière du float maximal), on calcule les suites $y_k$ et $\hat{y_k}$ qui représentent les valeurs exactes et approximées respectivement. On définit ensuite l'erreur absolue $r_k = |y_k-\hat{y_k}|$. Pour trouver l'erreur moyenne absolue, l'on ne peut pas simplement calculer la moyenne des termes de $r_k$. En effet, puisque les floats sont de moins en moins denses lorsqu'on s'éloigne de 0, calculer la moyenne des termes de $r_k$ accorderait une plus grande importance à la précision autour de 0.\\
 Pour remédier à ce problème nous désirons trouver la valeur moyenne de la fonction obtenue en reliant les points de $r_k$. La valeur moyenne d'une fonction $f(x)$ sur l'intervalle $[a;b]$ est donnée par
 $$
 \Bar{f} = \frac{1}{b-a}\int_a^bf(x)\;dx
@@ -473,15 +495,19 @@ $$
 \Bar{r} = \frac{1}{x_b-x_a}\sum_{i=a}^{b-1}\frac{(r_i+r_{i+1})(x_{i+1}-x_i)}2.
 $$
 Avec $a$ et $b$ les bornes inférieures et supérieures des indices de la suite $x_k$. Dans notre cas, on trouve $\Bar{r} \approx 0.0001$.
-
-
-
-
+\newpage
+Pour se donner une idée de l'erreur attendue pour une valeur d'un certain ordre de grandeur, l'on peut tracer l'erreur absolue contre le $\log_{10}(x)$. De cette manière, on obtient un tel graphique:
+\begin{figure}[htp]
+    \centering
+    \includegraphics[width=12cm]{images/graph_inv.png}
+    \label{fig:graph_inv.png}
+\end{figure}\\
+L'on observe alors que pour des valeurs de $x < 10^{-4}$, l'approximation n'est pas fiable.
 \subsection{Calcul de fonctions trigonométriques}
 Les méthodes d'approximation de fonctions trigonométriques sont variées, celle expliquée ci-dessous n'a pas tant été choisie pour son efficacité que pour son élégance et simplicité. Elle repose sur cette observation:
 Remarquons que pour l'instant les seules fonctions que notre machine peut évaluer sont celles uniquement composées des 4 opérations élémentaires, dont des polynômes. Pour cette raison l'évaluation des fonctions trigonométriques parait impossible. Il sera alors utile de définir un outil pour convertir les fonctions désirées en polynômes, qui sont eux évaluables.
 \subsubsection{Séries de Taylor}
-Les séries de Taylor sont un outil puissant pour approximer les fonctions avec des polynômes. Admettons que nous avons une fonction $f(x)$ et que nous voulons un polynôme $P_n(x)$ qui approxime $f(x)$ autour de $a$. C'est a dire que plus $x$ s'éloigne de $a$, plus $P_n(x)$ s'éloigne de $f(x)$. Soit,
+Les séries de Taylor sont un outil puissant pour approximer les fonctions avec des polynômes. Admettons que l'on aie une fonction $f(x)$ et que l'on veuille un polynôme $P_n(x)$ qui approxime $f(x)$ autour de $a$. C'est a dire que plus $x$ s'éloigne de $a$, plus $P_n(x)$ s'éloigne de $f(x)$. Soit,
 $$P_n(x) = c_0 + c_1(x-a) + c_2(x-a)^2+\cdot\cdot\cdot+c_n(x-a)^n.$$
 Les coefficients $c_0, \cdot\cdot\cdot,c_n$ restent alors à déterminer.
 Il parait intuitif que $P_n(a)$ devrait être égal à $f(a)$. Puisque $P_n(a) = c_0$, on en déduit $c_0=f(a)$. Ensuite, en continuant avec intuition, on décide que $P_n'(a) = f'(a)$. Et plus généralement $P_n^{(k)}(a) = f^{(k)}(a)$ pour tout $k\le n$, ou $f^{(k)}(x)$ désigne la $k$-ième dérivée de $f(x)$. En dérivant $k$ fois $P_n(x)$ on obtient
@@ -520,7 +546,6 @@ Vérifions maintenant graphiquement la précision de ces approximations.
 \end{tikzpicture}
 \end{center}
 Comparons ici la fonction $\sin(x)$ et son approximation de Taylor tronquée à 5 termes, soit $x-\frac{x^3}{3!}+\frac{x^5}{5!}-\frac{x^7}{7!}+\frac{x^9}{9!}$. On s'arrête à 5 termes car le prochain impliquerait une multiplication par $\frac{1}{11!} \approx 2.5 \cdot 10^{-8}$ ce qui est inférieur a la valeur minimale représentable par nos floats ($\approx 6 \cdot 10^{-8})$. Intuitivement, il semblerait qu'il nous faut juste une approximation sur le segment $[0; 2\pi]$ et ensuite la périodicité de la fonction permettrait une approximation sur tout les réels. Pourtant, la meilleure approximation possible avec nos limitations physiques commence déjà à se dégrader autour de $x = \pi$. Pour remédier à ce problème, remarquons qu'on peut séparer la fonction en segments de longueur $\pi$ qui sont tous des symétries du premier segment $[-\frac{\pi}{2}; \frac{\pi}{2}]$ (sur lequel l'approximation semble plutôt rapprochée de la valeur exacte). C'est à dire que le premier segment encode toute l'information nécessaire pour représenter le reste de la fonction. Il faut alors un algorithme qui peut rabattre tout nombre dans sur son équivalent dans le segment $[-\frac{\pi}{2}; \frac{\pi}{2}]$. Soit, $x\rightarrow \theta$ avec $x \in \mathbb{R}$, $\sin(x) = \sin(\theta)$ et $\theta \in [-\frac{\pi}{2}; \frac{\pi}{2}]$. Ci-dessous est détaillé le pseudocode d'un tel algorithme:
-\newpage
 \begin{algorithm}
 \begin{algorithmic}[1]
 \State $\theta \gets x\;\%\;2\pi$
@@ -543,7 +568,14 @@ Une fois $\theta$ trouvé, il suffit d'évaluer la série de Taylor en $\theta$.
 Pour approximer $\cos(x)$ on utilise une méthode similaire, mais puisque $\cos(x)$ est positif sur le segment $[-\frac{\pi}{2}; \frac{\pi}{2}]$, il n'existe pas un $\theta$ compris dans ce segment tel que $\cos(x) = cos(\theta),\;\forall x \in \mathbb{R}.$ On peut en revanche trouver $\theta$, tel que $|\cos(x)| = cos(\theta)$, et le signe du résultat final, qu'on applique au résultat obtenu après l'évaluation de la série.
 \subsubsection{Implémentation et résultats} 
 Lors de l'implémentation, on remarque que le facteur limitant de la précision est l'opération \%, présente à la première ligne de l'algorithme. Pour cette raison une erreur absolue maximale $< 0.01$, n'est que garantie pour $x<34$. Mais puisqu'en pratique l'on calcule rarement le sinus ou le cosinus d'un nombre plus grand que $2\pi$, nous allons utiliser les bornes $-2\pi$ et $2\pi$ pour le calcul de l'erreur absolue moyenne. En procèdent de la même manière que précédemment pour la fonction inverse, on obtient, pour sinus, une erreur absolue moyenne de $\Bar{r}\approx 0.001$ et pour cosinus, une erreur absolue moyenne de $\Bar{r}\approx0.0008$.
-
+\newpage
+En traçant, pour sinus, l'erreur absolue sur l'intervalle $[0;2\pi]$, on obtient le graphique ci-dessous:
+\begin{figure}[htp]
+    \centering
+    \includegraphics[width=12cm]{images/graph_sin.png}
+    \label{fig:graph_sin.png}
+\end{figure}\\
+Soit, l'erreur est maximale autour de $x=\frac{\pi}{2}$ et $x=\frac{3\pi}{2}$. Ceci fait sens puisque ces points se trouvent aux extrémités des segments définis plus tôt et que la série de Taylor s'éloigne de la valeur exacte aux extrémités. De même pour l'approximation de la fonction cosinus.
 \section{Calcul de décimales de pi}
 \subsection{Méthode}
 En utilisant la représentation float, la meilleur approximation possible de $\pi$ est égale à 3.140625. Alors, essayer de calculer un maximum de décimales de $\pi$ sous la forme d'un float est un exercice un peu décevant. Heureusement il existe des algorithmes qui ne travaillent que sur des entiers, et qui produisent, itérativement, des décimales de $\pi$. L'algorithme utilisé ici, découvert par Rabinowitz et Wagon en 1995 \cite{rabinowitz1995spigot}, est lui même basé sur un autre algorithme pour calculer les décimales de $e$, découvert par Sale en 1968 \cite{sale1968e} que nous allons détailler en premier afin de mieux comprendre celui pour $\pi$. Cet algorithme se base sur la somme infinie ci-dessous.
@@ -595,14 +627,24 @@ $$
 \frac{1}{3}\Bigl(20+\frac{2}{5}\Bigl(20+\frac{3}{7}\Bigl(20+\frac{4}{9}\Bigl(20\Bigr)\Bigr)\Bigr)\Bigr)
 $$
 $$
-=10 + \frac{1}{3}\Bigl(2+\frac{2}{5}\Bigl(2+\frac{3}{7}\Bigl(0+\frac{4}{9}\Bigl(2\Bigr)\Bigr)\Bigr)\Bigr)
+=\frac{1}{3}\Bigl(20+\frac{2}{5}\Bigl(20+\frac{3}{7}\Bigl(20+\frac{4}{9}\Bigl(2\cdot9 + 2\Bigr)\Bigr)\Bigr)\Bigr)
+$$
+$$
+=\frac{1}{3}\Bigl(20+\frac{2}{5}\Bigl(20+\frac{3}{7}\Bigl(20+2\cdot4+\frac{4}{9}\Bigl(2\Bigr)\Bigr)\Bigr)\Bigr)
+$$
+$$
+=\frac{1}{3}\Bigl(20+\frac{2}{5}\Bigl(20+\frac{3}{7}\Bigl(28+\frac{4}{9}\Bigl(2\Bigr)\Bigr)\Bigr)\Bigr)
+$$
+En continuant de cette manière, de la droite vers la gauche on obtient:
+$$
+10 + \frac{1}{3}\Bigl(2+\frac{2}{5}\Bigl(2+\frac{3}{7}\Bigl(0+\frac{4}{9}\Bigl(2\Bigr)\Bigr)\Bigr)\Bigr)
 $$
 Puisque la prochaine décimale est un 10 on en déduit donc que la première décimale (ou chiffre dans ce cas) de $\pi$ est un 3. En continuant de la même manière l'on peut aisément calculer le reste des décimales offertes par cette approximation. Cette explication omet, par volonté de simplifier, certains aspects. Mais l'idée générale reste la même. 
 \subsection{Implémentation et résultats}
 Pour implémenter cet algorithme on représente l'approximation comme une liste remplie de 2, sur laquelle il est facile de manipuler chaque entrée en fonction de sa position dans la liste. Il parait intuitif que plus la liste est grande, meilleure l'approximation sera et donc plus on aura de décimales correctes. Puisque dans notre cas l'espace de mémoire est une contrainte plutôt importante il sera important d'écrire un programme le plus court possible, de sorte à pouvoir utiliser le reste de la mémoire pour une liste de taille maximale. Dans notre cas il a été possible d'écrire un programme assez court pour que la liste aie 32'485 entrées de 16 bits. En effectuant 10'000 itérations, on obtient alors 10'000 décimales de $\pi$. Après avoir comparé les décimales obtenues avec les décimales correctes, on s'aperçoit que nos décimales ne diffèrent qu'à partir de la 9724-ème décimale. Soit, notre processeur a correctement calculé 9723 décimales de $\pi$. Notons que ce résultat, bien qu'impressionnant, n'a absolument aucune utilité pratique, puisque seulement 38 décimales suffisent pour calculer le périmètre d'un disque de la taille de l'univers observable avec une précision de l'ordre du rayon d'un atome d'hydrogène. \cite{yates_2024}
 \section{Conclusion}
-Mieux comprendre les outils qu'on utilise, permet de les exploiter au maximum de leur capacités. Ce travail a exploré quelques-uns des concepts fondamentaux présents dans tous les ordinateurs modernes. En effet, bien que notre machine soit beaucoup plus simple que celles d'aujourd'hui, les bases restent les mêmes. Cependant, cette simplicité entraîne une précision inférieur au standards modernes. Les limitations physique de notre machine étaient l'obstacle majeur qu'il a fallu au mieux contourner. Une autre limitation majeure, qui n'a pas été traitée dans ce travail, est celle du temps d’exécution. En effet, avec un processeur émulé il est difficile de savoir combien de temps un programme aurait prit si il avait exécuté par une vraie machine. En tout, ce travail montre que bien que ça puisse parfois paraître être le cas, rien en informatique est de l'ordre de la magie. Tout peut être ramené à une poignée d'opérations simples réalisables par n'importe qui.
-\vspace{5cm}
+Mieux comprendre les outils qu'on utilise, permet de les exploiter au maximum de leur capacités. Ce travail a exploré quelques-uns des concepts fondamentaux présents dans tous les ordinateurs modernes. En effet, bien que notre machine soit beaucoup plus simple que celles d'aujourd'hui, les bases restent les mêmes. Cependant, cette simplicité entraîne une précision inférieure au standards modernes. Les limitations physiques de notre machine étaient l'obstacle majeur qu'il a fallu au mieux contourner. Une autre limitation majeure, qui n'a pas été traitée dans ce travail, est celle du temps d’exécution. En effet, avec un processeur émulé il est difficile de savoir combien de temps un programme aurait prit si il avait exécuté par une vraie machine. En tout, ce travail montre que bien que ça puisse parfois paraître être le cas, rien en informatique est de l'ordre de la magie. Tout peut être ramené à une poignée d'opérations simples réalisables par n'importe qui.
+\vspace{2cm}
 \begin{figure}[htp]
     \centering
     \includegraphics[width=12cm]{images/quote.png}

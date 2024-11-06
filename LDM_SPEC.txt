@@ -15,9 +15,13 @@ The program counter is an extra 16bit register that is stored in memory at addre
 
 --- INSTRUCTIONS ---
 0: LDW reg, *imm16/*AB     → reg = *imm16/*AB
+<<<<<<< HEAD
 
 1: STW reg, *imm16/*AB     → *imm16/*AB = reg
 
+=======
+1: STW reg, *imm16/*AB     → *imm16/*AB = reg
+>>>>>>> ddaa9ef54049b9ad3becfbfa49af7a9bd22168ae
 2: MVW reg0, reg1/imm8     → reg0 = reg1/imm8
 3: ADD^ reg0, reg1/imm8    → reg0 = reg0 + reg1/imm8
 4: ADC^ reg0, reg1/imm8    → reg0 = reg0 + reg1/imm8 + C
@@ -48,4 +52,8 @@ Therefore instructions can be up to 3 bytes long.
 |Text →         Static data →                             ← Stack|
 |▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒░░░░░░░░░░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓|
 |<-------------------------65'536 bytes------------------------->|
+<<<<<<< HEAD
 First two bytes are reserved for the program counter
+=======
+First two bytes are reserved for the program counter
+>>>>>>> ddaa9ef54049b9ad3becfbfa49af7a9bd22168ae
